@@ -6,6 +6,11 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["tools/serve.mjs"],
       "port": 8765
+    },
+    {
+      "name": "shiba-run-attach",
+      "url": "http://localhost:8765",
+      "port": 8765
     }
   ]
 }

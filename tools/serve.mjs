@@ -19,7 +19,7 @@ const MIME = {
   '.ico': 'image/x-icon',
 };
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   const urlPath = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
   const filePath = normalize(join(ROOT, urlPath === '/' ? 'index.html' : urlPath));
   if (!filePath.startsWith(normalize(ROOT))) {
@@ -38,6 +38,17 @@ createServer(async (req, res) => {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('404 Not Found');
   }
-}).listen(PORT, () => {
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`ポート${PORT}は使用中です。サーバは既に起動しています → http://localhost:${PORT} を開いてください`);
+    console.log(`別プロセスを止めたい場合: kill $(lsof -ti :${PORT})`);
+    process.exit(0);
+  }
+  throw err;
+});
+
+server.listen(PORT, () => {
   console.log(`serving ${ROOT} at http://localhost:${PORT}`);
 });
