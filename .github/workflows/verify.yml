@@ -1,0 +1,29 @@
+name: 挙動検証
+
+# push と PR のたびに GitHub のマシンで実行する。
+# ゲームを3600フレーム自動プレイし、描画呼び出し列のダイジェストが
+# tools/replay-baseline.txt と一致するかを確認する。
+on:
+  push:
+  pull_request:
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: リプレイダイジェストの照合
+        run: EXPECT="$(cat tools/replay-baseline.txt)" node tools/replay-check.mjs
+
+      - name: 外部リソース参照がないことの確認
+        run: |
+          if grep -rE 'https?://' index.html src/; then
+            echo "外部URLへの参照が見つかりました。このゲームは依存ゼロを保つ方針です。" >&2
+            exit 1
+          fi
+          echo "外部リソース参照なし"

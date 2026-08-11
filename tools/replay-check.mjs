@@ -6,6 +6,7 @@
 //
 //   node tools/replay-check.mjs            … ダイジェストを表示
 //   DUMP=/tmp/a.txt node tools/replay-check.mjs  … 描画呼び出し列を書き出す（差分調査用）
+//   EXPECT=<digest> node tools/replay-check.mjs  … 不一致なら終了コード1（CI用）
 //
 // index.html のscriptがインライン／module srcのどちらでも動く。
 import { readFile, writeFile } from 'node:fs/promises';
@@ -17,6 +18,7 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const FRAMES = Number(process.env.FRAMES || 3600);
 const SEED = Number(process.env.SEED || 12345);
 const DUMP = process.env.DUMP || '';
+const EXPECT = (process.env.EXPECT || '').trim();
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 
@@ -213,3 +215,10 @@ const digest = sha(mainHash + '|' + offscreen.join(',')).slice(0, 16);
 if (DUMP) await writeFile(DUMP, mainCanvas.log.join('\n') + '\n');
 console.log(`mode=${mode} frames=${ranFrames} seed=${SEED} ops=${mainCanvas.log.length} offscreen=${offscreen.length}`);
 console.log(`digest=${digest}`);
+
+if (EXPECT && EXPECT !== digest) {
+  console.error(`\n挙動が変わっています。期待 ${EXPECT} に対して実際は ${digest} でした。`);
+  console.error('意図した変更なら tools/replay-baseline.txt を更新してください。');
+  console.error('意図しない変更なら DUMP=... で描画呼び出し列を書き出し、変更前後で diff を取ってください。');
+  process.exit(1);
+}
