@@ -1,6 +1,6 @@
 ---
 title: 柴犬ラン Step1 スタンドアロン化
-status: approved        # draft | approved | in-progress | done | aborted
+status: done        # draft | approved | in-progress | done | aborted
 created: 2026-08-11
 planner: claude-fable-5
 executor: codex-cli 0.147.0 (gpt-5.6-sol)
@@ -15,14 +15,14 @@ target: /Users/komayuuta/project/games/test
 
 - 目的: claude.ai の Artifact 断片形式である柴犬ラン5を、外部環境に依存しない単体 `index.html` にし、ローカルブラウザで完動させる。ゲームロジック（JS）は1文字も変えない。
 - 完了条件（S1〜S3 は Codex が検証、S4 は Claude が検収）:
-  - [ ] `test -f index.html && echo OK` → `OK`
-  - [ ] `awk '/^<script>$/{f=1;next} /^<\/script>/{f=0} f' index.html | md5 -q` → `f9767f647616c33850665abf19d49456`
-  - [ ] `grep -c 'ti ti-' index.html` → 出力 `0`（終了コード1。これが正常）
-  - [ ] `grep -ci '<!doctype html>' index.html` → `1`
-  - [ ] `grep -oE '^[[:space:]]*--(font-sans|border|surface-2|text-primary|text-secondary|text-muted):' index.html | wc -l` → `6`
-  - [ ] `grep -cE 'https?://' index.html` → 出力 `0`（終了コード1。外部リソース参照ゼロ）
-  - [ ] `test ! -f shiba_run_platformer_v5_optimized.html && echo GONE` → `GONE`
-  - [ ] ブラウザ検収（Claude実施）: `node tools/serve.mjs` 起動 → http://localhost:8765 表示 → スタート押下 → 移動・ジャンプ・ショットが反応 → コンソールエラー0件
+  - [x] `test -f index.html && echo OK` → `OK`
+  - [x] `awk '/^<script>$/{f=1;next} /^<\/script>/{f=0} f' index.html | md5 -q` → `f9767f647616c33850665abf19d49456`
+  - [x] `grep -c 'ti ti-' index.html` → 出力 `0`（終了コード1。これが正常）
+  - [x] `grep -ci '<!doctype html>' index.html` → `1`
+  - [x] `grep -oE '^[[:space:]]*--(font-sans|border|surface-2|text-primary|text-secondary|text-muted):' index.html | wc -l` → `6`
+  - [x] `grep -cE 'https?://' index.html` → 出力 `0`（終了コード1。外部リソース参照ゼロ）
+  - [x] `test ! -f shiba_run_platformer_v5_optimized.html && echo GONE` → `GONE`
+  - [x] ブラウザ検収（Claude実施）: `node tools/serve.mjs` 起動 → http://localhost:8765 表示 → スタート押下 → 移動・ジャンプ・ショットが反応 → コンソールエラー0件
 
 ## 2. 事実（現状）
 
@@ -146,3 +146,6 @@ target: /Users/komayuuta/project/games/test
 
 | 日時 | ステップ | 結果 | 検証出力（要約） | 逸脱・メモ |
 |---|---|---|---|---|
+| 2026-08-11 18:06:08 JST | S1 | 成功 | `OK`; md5=`f9767f647616c33850665abf19d49456`; `ti ti-`=0; doctype=1; CSS変数=6; URL=0 | なし |
+| 2026-08-11 18:06:08 JST | S2 | 成功 | `PRESERVED`; `GONE` | なし |
+| 2026-08-11 18:15 JST | S4 | 合格 | 全機械検証をClaudeが再実行し一致。ブラウザ検収: タイトル表示・スタート・移動・ジャンプ・ショット・骨HUD描画を確認、コンソールエラー0件 | 検収時に`.gitignore`（.DS_Store除外）を追加（計画外・検収者判断）。検証環境の特性を記録: (1)ブラウザツールのキー注入は`e.code`が空のため、テストはJSからKeyboardEvent(code指定)を発行する (2)ペイン非表示中はrAF停止でゲームループが進まない（実利用には無関係） |

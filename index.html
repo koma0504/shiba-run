@@ -1,3 +1,27 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>柴犬ラン 5</title>
+<style>
+:root{
+  --font-sans:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  --border:rgba(20,30,40,0.18);
+  --surface-2:#ffffff;
+  --text-primary:#1b2430;
+  --text-secondary:#46525f;
+  --text-muted:#8a929e;
+}
+*{box-sizing:border-box;}
+body{margin:0;padding:16px;background:#eef4f8;font-family:var(--font-sans);}
+button{font-family:inherit;font-weight:500;color:var(--text-primary);background:#ffffff;border:1px solid var(--border);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+button:active{background:#dbe6ee;}
+#ovB{background:#2f6fed;border:none;color:#ffffff;}
+#ovB:active{background:#245ac6;}
+</style>
+</head>
+<body>
 <h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">柴犬を操作しショットやチャージショットで戦いながら骨を集め、ボスネコを倒して犬小屋を目指す横スクロールアクションゲームの軽量化版</h2>
 <div id="shibaWrap" style="max-width:640px;margin:0 auto;font-family:var(--font-sans);-webkit-user-select:none;user-select:none;">
   <div id="stage" style="position:relative;border-radius:12px;overflow:hidden;border:0.5px solid var(--border);background:#8ed4f7;">
@@ -6,18 +30,18 @@
       <div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;text-align:center;max-width:84%;">
         <p id="ovT" style="font-size:22px;font-weight:500;margin:0 0 8px;color:var(--text-primary);">柴犬ラン 5</p>
         <p id="ovD" style="font-size:13px;line-height:1.7;margin:0 0 14px;color:var(--text-secondary);">ワンショットで敵を撃てる。長押しでチャージショット。<br>HP制。砲台ネコの弾に注意。骨20本で1UP、肉で無敵＋全回復。<br>最深部のボス「ニャン大将」を倒して犬小屋へ。</p>
-        <button id="ovB" style="font-size:15px;padding:9px 24px;"><i class="ti ti-player-play" aria-hidden="true" style="font-size:16px;vertical-align:-2px;"></i> スタート</button>
+        <button id="ovB" style="font-size:15px;padding:9px 24px;">▶ スタート</button>
       </div>
     </div>
   </div>
   <div id="ctrl" style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;touch-action:none;">
     <div style="display:flex;gap:8px;">
-      <button class="cbtn" id="bL" aria-label="左へ移動" style="min-width:58px;height:56px;font-size:20px;touch-action:none;"><i class="ti ti-arrow-left" aria-hidden="true"></i></button>
-      <button class="cbtn" id="bR" aria-label="右へ移動" style="min-width:58px;height:56px;font-size:20px;touch-action:none;"><i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+      <button class="cbtn" id="bL" aria-label="左へ移動" style="min-width:58px;height:56px;font-size:20px;touch-action:none;">←</button>
+      <button class="cbtn" id="bR" aria-label="右へ移動" style="min-width:58px;height:56px;font-size:20px;touch-action:none;">→</button>
     </div>
     <div style="display:flex;gap:8px;">
-      <button class="cbtn" id="bS" style="min-width:82px;height:56px;font-size:14px;font-weight:500;touch-action:none;"><i class="ti ti-bolt" aria-hidden="true" style="font-size:16px;vertical-align:-2px;"></i> ショット</button>
-      <button class="cbtn" id="bJ" style="min-width:82px;height:56px;font-size:14px;font-weight:500;touch-action:none;"><i class="ti ti-arrow-big-up" aria-hidden="true" style="font-size:16px;vertical-align:-2px;"></i> ジャンプ</button>
+      <button class="cbtn" id="bS" style="min-width:82px;height:56px;font-size:14px;font-weight:500;touch-action:none;">⚡ ショット</button>
+      <button class="cbtn" id="bJ" style="min-width:82px;height:56px;font-size:14px;font-weight:500;touch-action:none;">↑ ジャンプ</button>
     </div>
   </div>
   <p style="margin:8px 0 0;text-align:center;font-size:11px;color:var(--text-muted);">PC：← → 移動 ／ スペース＝ジャンプ（空中で2段） ／ Z・X＝ショット（長押しでチャージ）</p>
@@ -445,3 +469,5 @@ render();}
 requestAnimationFrame(loop);
 })();
 </script>
+</body>
+</html>
