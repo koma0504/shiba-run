@@ -1,0 +1,215 @@
+// 決定論リプレイ検証: リファクタで挙動が変わっていないことを機械的に証明する
+//
+// Node上のスタブDOMでゲームを走らせ、決まった入力列を決まったフレーム数だけ流し、
+// Canvasへの描画呼び出し列をハッシュ化する。乱数は固定シード、時刻は固定刻み。
+// リファクタ前後でダイジェストが一致すれば、描画に現れる挙動は同一である。
+//
+//   node tools/replay-check.mjs            … ダイジェストを表示
+//   DUMP=/tmp/a.txt node tools/replay-check.mjs  … 描画呼び出し列を書き出す（差分調査用）
+//
+// index.html のscriptがインライン／module srcのどちらでも動く。
+import { readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const FRAMES = Number(process.env.FRAMES || 3600);
+const SEED = Number(process.env.SEED || 12345);
+const DUMP = process.env.DUMP || '';
+
+const sha = (s) => createHash('sha256').update(s).digest('hex');
+
+let seedState = SEED | 0;
+function seededRandom() {
+  seedState = (seedState + 0x6d2b79f5) | 0;
+  let t = Math.imul(seedState ^ (seedState >>> 15), 1 | seedState);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+function fmtArg(v) {
+  if (v && v.__canvas) return '#' + v.digest();
+  if (typeof v === 'number') return Object.is(v, -0) ? '0' : String(v);
+  if (v === null || v === undefined) return String(v);
+  if (typeof v === 'object') return '[obj]';
+  return String(v);
+}
+
+const CTX_METHODS = [
+  'beginPath', 'closePath', 'moveTo', 'lineTo', 'arc', 'arcTo', 'ellipse',
+  'quadraticCurveTo', 'bezierCurveTo', 'rect', 'roundRect', 'fill', 'stroke',
+  'fillRect', 'strokeRect', 'clearRect', 'save', 'restore', 'translate',
+  'scale', 'rotate', 'setTransform', 'resetTransform', 'transform', 'clip',
+  'fillText', 'strokeText', 'setLineDash',
+];
+const CTX_PROPS = [
+  'fillStyle', 'strokeStyle', 'lineWidth', 'globalAlpha', 'font', 'textAlign',
+  'textBaseline', 'lineCap', 'lineJoin', 'miterLimit', 'globalCompositeOperation',
+  'imageSmoothingEnabled', 'shadowBlur', 'shadowColor', 'filter',
+];
+
+function makeCtx(log) {
+  const ctx = {};
+  for (const name of CTX_METHODS) {
+    ctx[name] = (...args) => { log.push(name + '(' + args.map(fmtArg).join(',') + ')'); };
+  }
+  ctx.drawImage = (img, ...rest) => {
+    log.push('drawImage(' + fmtArg(img) + ',' + rest.map(fmtArg).join(',') + ')');
+  };
+  // 文字幅は実測できないので決定論的な近似を返す。前後で同じ値なので比較には影響しない
+  ctx.measureText = (text) => {
+    log.push('measureText(' + text + ')');
+    return { width: String(text).length * 7 };
+  };
+  const gradient = () => ({ addColorStop: (o, c) => log.push('addColorStop(' + fmtArg(o) + ',' + c + ')') });
+  ctx.createLinearGradient = (...a) => { log.push('linearGradient(' + a.map(fmtArg).join(',') + ')'); return gradient(); };
+  ctx.createRadialGradient = (...a) => { log.push('radialGradient(' + a.map(fmtArg).join(',') + ')'); return gradient(); };
+  ctx.createPattern = () => null;
+  for (const prop of CTX_PROPS) {
+    let value;
+    Object.defineProperty(ctx, prop, {
+      configurable: true,
+      get: () => value,
+      set: (next) => { value = next; log.push(prop + '=' + fmtArg(next)); },
+    });
+  }
+  return ctx;
+}
+
+const allCanvases = [];
+function makeCanvas(w = 300, h = 150) {
+  const log = [];
+  let cachedLen = -1;
+  let cachedHash = '';
+  const canvas = {
+    __canvas: true,
+    width: w,
+    height: h,
+    log,
+    style: {},
+    // オフスクリーンcanvasは「生成順」ではなく「中身」で識別する。
+    // モジュール分割で生成順が変わっても、内容が同じならダイジェストは変わらない
+    digest() {
+      if (cachedLen !== log.length) {
+        cachedLen = log.length;
+        cachedHash = sha(log.join('\n')).slice(0, 12);
+      }
+      return cachedHash;
+    },
+    getContext: () => makeCtx(log),
+    addEventListener() {},
+    removeEventListener() {},
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: w, height: h }),
+    toDataURL: () => '',
+  };
+  allCanvases.push(canvas);
+  return canvas;
+}
+
+function makeEl(id) {
+  return {
+    id,
+    style: {},
+    textContent: '',
+    innerHTML: '',
+    className: '',
+    addEventListener() {},
+    removeEventListener() {},
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }),
+    focus() {},
+    click() {},
+  };
+}
+
+const mainCanvas = makeCanvas(640, 480);
+const elements = { cv: mainCanvas };
+const winListeners = {};
+let rafCallback = null;
+
+globalThis.document = {
+  getElementById: (id) => (elements[id] ??= makeEl(id)),
+  createElement: (tag) => (tag === 'canvas' ? makeCanvas() : makeEl(tag)),
+  querySelector: () => null,
+  addEventListener() {},
+  removeEventListener() {},
+  body: makeEl('body'),
+  documentElement: makeEl('html'),
+  hidden: false,
+  visibilityState: 'visible',
+};
+globalThis.window = {
+  addEventListener: (type, fn) => { (winListeners[type] ??= []).push(fn); },
+  removeEventListener() {},
+  requestAnimationFrame: (cb) => { rafCallback = cb; return 1; },
+  cancelAnimationFrame() {},
+  devicePixelRatio: 1,
+  innerWidth: 1280,
+  innerHeight: 720,
+  // AudioContextを未定義にしておくと initA の try/catch が捕まえ、音声は無効のまま進む
+  AudioContext: undefined,
+  webkitAudioContext: undefined,
+};
+globalThis.requestAnimationFrame = (cb) => { rafCallback = cb; return 1; };
+globalThis.cancelAnimationFrame = () => {};
+Math.random = seededRandom;
+
+// 入力スケジュール: 右に走り続けながら、周期的にジャンプ・ショット・チャージショットを行う。
+// フレーム番号だけで決まるので、何度実行しても同じ操作列になる。
+const KEYS = ['ArrowRight', 'Space', 'KeyZ'];
+function inputsAt(f) {
+  return {
+    ArrowRight: f >= 10,
+    Space: (f >= 4 && f < 8) || (f >= 40 && f % 47 < 7),
+    KeyZ: (f >= 60 && f % 23 < 4) || f % 311 < 70,
+  };
+}
+function fireKey(type, code) {
+  const event = { type, code, repeat: false, preventDefault() {}, stopPropagation() {} };
+  for (const fn of winListeners[type] ?? []) fn(event);
+}
+
+const html = await readFile(join(ROOT, 'index.html'), 'utf8');
+const moduleSrc = html.match(/<script[^>]*\bsrc=["']([^"']+)["']/);
+let mode;
+if (moduleSrc) {
+  mode = 'module:' + moduleSrc[1];
+  await import(pathToFileURL(join(ROOT, moduleSrc[1])).href);
+} else {
+  const inline = html.match(/<script[^>]*>([\s\S]*?)<\/script>/);
+  if (!inline) {
+    console.error('index.html に script が見つかりません');
+    process.exit(1);
+  }
+  mode = 'inline';
+  new Function(inline[1])();
+}
+
+let previous = {};
+let timestamp = 0;
+let ranFrames = 0;
+for (let f = 0; f < FRAMES; f++) {
+  const current = inputsAt(f);
+  for (const code of KEYS) {
+    if (current[code] && !previous[code]) fireKey('keydown', code);
+    if (!current[code] && previous[code]) fireKey('keyup', code);
+  }
+  previous = current;
+  const cb = rafCallback;
+  rafCallback = null;
+  if (!cb) {
+    console.error(`フレーム${f}でrequestAnimationFrameが途切れました`);
+    process.exit(1);
+  }
+  timestamp += 16.6667;
+  cb(timestamp);
+  ranFrames++;
+}
+
+const offscreen = allCanvases.filter((c) => c !== mainCanvas).map((c) => c.digest()).sort();
+const mainHash = sha(mainCanvas.log.join('\n')).slice(0, 12);
+const digest = sha(mainHash + '|' + offscreen.join(',')).slice(0, 16);
+
+if (DUMP) await writeFile(DUMP, mainCanvas.log.join('\n') + '\n');
+console.log(`mode=${mode} frames=${ranFrames} seed=${SEED} ops=${mainCanvas.log.length} offscreen=${offscreen.length}`);
+console.log(`digest=${digest}`);
