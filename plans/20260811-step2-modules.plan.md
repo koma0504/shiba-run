@@ -1,6 +1,6 @@
 ---
 title: 柴犬ラン Step2 ESモジュール分割と可読化
-status: approved        # draft | approved | in-progress | done | aborted
+status: done        # draft | approved | in-progress | done | aborted
 created: 2026-08-11
 planner: claude-opus-5
 executor: codex-cli 0.147.0 (gpt-5.6-sol)
@@ -13,16 +13,16 @@ target: /Users/komayuuta/project/games/test
 
 ## 1. 目的と完了条件
 
-- 目的: 421行1ファイルのゲームコードを10個のESモジュールへ分割し、識別子を意味の通る名前にする。**挙動は1ミリも変えない**。以後「ステージ追加はlevel.jsだけ」「難易度調整はconfig.jsだけ」で済む土台にする。
+- 目的: 421行1ファイルのゲームコードを11個のESモジュールへ分割し、識別子を意味の通る名前にする。**挙動は1ミリも変えない**。以後「ステージ追加はlevel.jsだけ」「難易度調整はconfig.jsだけ」で済む土台にする。
 - 完了条件（S1〜S4はCodexが検証、S5はClaudeが検収）:
-  - [ ] `node tools/replay-check.mjs | tail -1` → `digest=f95011843bc0462d`
-  - [ ] `ls src/*.js | wc -l` → `10`
-  - [ ] `grep -c 'script type="module" src="src/main.js"' index.html` → `1`
-  - [ ] `grep -cE '^<script>$' index.html` → 出力 `0`（終了コード1。インラインscriptが残っていない）
-  - [ ] `grep -c 'ti ti-' index.html` → 出力 `0`（終了コード1。Step1の成果を壊していない）
-  - [ ] `grep -chE '^\s*var ' src/*.js | sort -u` → `0` のみ（varが1つも残っていない）
-  - [ ] `grep -lE '\b(chargeT|bcount|chkI|pwCd|ebs|turs|inp|KM|CHKS|AR0|AR1)\b' src/*.js; echo "rc=$?"` → `rc=1`（旧名が残っていない）
-  - [ ] ブラウザ検収（Claude実施）: サーバ経由で表示 → スタート → 移動・ジャンプ・ショット・骨取得が動作 → コンソールエラー0件
+  - [x] `node tools/replay-check.mjs | tail -1` → `digest=f95011843bc0462d`
+  - [x] `ls src/*.js | wc -l` → `11`
+  - [x] `grep -c 'script type="module" src="src/main.js"' index.html` → `1`
+  - [x] `grep -cE '^<script>$' index.html` → 出力 `0`（終了コード1。インラインscriptが残っていない）
+  - [x] `grep -c 'ti ti-' index.html` → 出力 `0`（終了コード1。Step1の成果を壊していない）
+  - [x] `grep -chE '^\s*var ' src/*.js | sort -u` → `0` のみ（varが1つも残っていない）
+  - [x] `grep -lE '\b(chargeT|bcount|chkI|pwCd|ebs|turs|inp|KM|CHKS|AR0|AR1)\b' src/*.js; echo "rc=$?"` → `rc=1`（旧名が残っていない）
+  - [x] ブラウザ検収（Claude実施）: サーバ経由で表示 → スタート → 移動・ジャンプ・ショット・骨取得が動作 → コンソールエラー0件
 
 ## 2. 事実（現状）
 
@@ -48,6 +48,10 @@ target: /Users/komayuuta/project/games/test
 | 6 | 入力の副作用 | input.jsからtryFire直接呼び出し / コールバック注入 | コールバック注入`bindInput({fire,startGame})` | 直接呼び出しはinput.js↔game.jsの循環参照になる |
 | 7 | IIFEラッパー | 残す / 外す | S1では残し、S3で外す | モジュールスコープは既に隔離されているため不要だが、S1は「そのまま移動」に徹して検証を単純化する |
 | 8 | var→let/const | やる / やらない | S4でやる | 事実欄のとおりクロージャ問題がなく安全。モジュール化の目的である可読性に直結する |
+| 9 | `initA()`の呼び出し元（input.jsとmain.jsの両方から呼ぶ） | input.jsがaudio.jsをimport / `bindInput`にコールバック追加 | input.jsがaudio.jsをimport | audio.jsはimport先を持たないため循環参照にならない。ブラウザの自動再生制限により「最初のユーザー操作で音声を初期化する」ことは入力処理の責務でもある。コールバック追加は間接化が増えるだけで得がない |
+| 10 | `cv`/`ctx`の置き場所（render.jsとinput.jsの両方が使う） | render.jsが持つ / input.jsの該当行をmain.jsへ移す / 専用canvas.js | 専用`src/canvas.js` | render.jsはinput.jsをimportするため（チャージ表示で`inp.s`を参照）、input.js→render.jsは循環になる。行の移動は「移動のみ」の原則から外れる。2行のモジュールを足すのが最も安全。これによりモジュール数は11になる |
+| 11 | `solid`→`isSolid`が`render.js:116`のローカル関数`isSolid`と衝突する | ラッパーを残して別名にする / ラッパーを削除してimportした`isSolid`を直接渡す | ラッパーを削除 | 当該ラッパーは `function isSolid(cc,rw){return solid(cc,rw);}` という引数も戻り値も素通しの関数であり、削除して`runRow`にimport済みの`isSolid`を直接渡しても呼び出し結果は同一。別名を作ると意味のない名前が1つ増える。なお`isTop`は`solid`を2回呼ぶ独自ロジックなので残す |
+| 12 | `KEY_MAP`の値`'l'/'r'/'j'/'s'`（`inp[k]=v`で動的にフィールドを引く）をどう扱うか | 短縮文字列を維持して振り分け処理を追加 / 値を新フィールド名に変更 | 値を新フィールド名（`'left'/'right'/'jump'/'shoot'`）に変更 | この文字列はフィールド名の別名でしかないため、フィールド名と一緒に動かすのが本来の姿。振り分け処理の追加は、リネームで消えるはずの短縮名を延命させるだけで負債が残る |
 
 ## 4. 制約とスコープ外
 
@@ -74,15 +78,18 @@ target: /Users/komayuuta/project/games/test
 | ファイル | 責務 | importする先 |
 |---|---|---|
 | `src/config.js` | 定数（TAU, VIEW_W, VIEW_H, TILE, COLS, ROWS, WORLD_W, HP_MAX） | なし |
+| `src/canvas.js` | 表示用canvas要素と2Dコンテキストの取得・export（`canvas`, `ctx`の2行） | なし |
+| `src/audio.js` | `initAudio/tone/sfx` | なし |
 | `src/level.js` | タイル地形の構築、骨/敵/バネ/肉/中間地点の配置データ、`isSolid()` | config |
 | `src/state.js` | 可変状態オブジェクト`S`、`makeCats/makeCrows/makeTurrets/makeBoss`、`resetPlayer/resetAll` | config, level |
-| `src/audio.js` | `initAudio/tone/sfx` | なし |
 | `src/fx.js` | `spawnParticles/spawnRing/confetti/popText/updateFx` | config, state |
+| `src/input.js` | `input`オブジェクト、`bindInput({fire, startGame})`、キーボード/ボタン/canvasのイベント登録 | canvas, audio |
 | `src/ui.js` | `showOverlay/startGame/gameOver/clearGame/formatTime` | config, level, state, audio, fx |
-| `src/input.js` | `input`オブジェクト、`bindInput({fire, startGame})` | なし |
 | `src/game.js` | `step()`と全ゲームロジック（当たり判定・ダメージ・敵/ボス更新・射撃） | config, level, state, audio, fx, ui |
-| `src/render.js` | オフスクリーンスプライト生成、全描画、HUD | config, level, state, input |
+| `src/render.js` | オフスクリーンスプライト生成、全描画、HUD | config, canvas, level, state, input |
 | `src/main.js` | 配線とゲームループ | 全モジュール |
+
+`input.js` が `initAudio` を呼ぶのは、ボタンの`pointerdown`ハンドラ・`keydown`ハンドラの2箇所（判断記録#9）。`main.js` のオーバーレイボタンのクリックハンドラからも呼ぶため、`main.js` も `audio.js` をimportする。
 
 ## 7. リネーム表（S4で適用）
 
@@ -165,26 +172,37 @@ target: /Users/komayuuta/project/games/test
 - 検証: `node tools/replay-check.mjs | tail -1` → `digest=f95011843bc0462d`
 - 失敗時: セクション5の調査手順を1回だけ実施して修正。2回目も不一致なら停止して実行ログに記録
 
-### S3: 10モジュールへ分割する
-- 変更対象: `src/` 配下10ファイル
+### S3: 11モジュールへ分割する
+- 変更対象: `src/` 配下11ファイル
 - 作業内容:
-  1. セクション6の表のとおり `src/config.js` `src/level.js` `src/state.js` `src/audio.js` `src/fx.js` `src/ui.js` `src/input.js` `src/game.js` `src/render.js` を作成し、`src/main.js` から該当コードを**移動**する（書き換えない）
+  1. セクション6の表のとおり `src/config.js` `src/canvas.js` `src/audio.js` `src/level.js` `src/state.js` `src/fx.js` `src/input.js` `src/ui.js` `src/game.js` `src/render.js` を作成し、`src/main.js` から該当コードを**移動**する（書き換えない）
   2. 各モジュールは必要なものを `export` し、使う側は `import` する。依存はセクション6の表の方向のみ。循環参照を作らない
-  3. `input.js` は `press` の中の `tryFire` / `start` 呼び出しを、`bindInput({fire, startGame})` で受け取ったコールバック経由に変える。`main.js` が `bindInput({fire: tryFire, startGame: start})` で配線する
-  4. モジュール直下で共有していたループ変数 `i` `j` `r` は、各モジュール内で個別に宣言してよい（事実欄で関数間の値の引き継ぎがないことを確認済み）
-  5. `main.js` に残すのは、import群、`bindInput`と`overlayBtn`のクリック配線、`loop()`、初回の`requestAnimationFrame(loop)` のみ
-  6. IIFEラッパー `(function(){ ... })();` を外す（モジュールスコープで隔離されるため不要）
+  3. `input.js` は `press` の中の `tryFire` / `start` 呼び出しを、`bindInput({fire, startGame})` で受け取ったコールバック経由に変える。`main.js` が `bindInput({fire: tryFire, startGame: start})` で配線する。`initA()` の呼び出しは `audio.js` からのimportで解決する（コールバックにはしない。判断記録#9）
+  4. `cv`/`ctx` は `src/canvas.js` に置いて `export` し、`render.js` と `input.js` の両方がimportする（判断記録#10）
+  5. モジュール直下で共有していたループ変数 `i` `j` `r` は、各モジュール内で個別に宣言してよい（事実欄で関数間の値の引き継ぎがないことを確認済み）
+  6. `main.js` に残すのは、import群、`bindInput`と`ovB`のクリック配線、`loop()`、初回の`requestAnimationFrame(loop)` のみ
+  7. IIFEラッパー `(function(){ ... })();` を外す（モジュールスコープで隔離されるため不要）
 - 検証:
   - `node tools/replay-check.mjs | tail -1` → `digest=f95011843bc0462d`
-  - `ls src/*.js | wc -l` → `10`
+  - `ls src/*.js | wc -l` → `11`
 - 失敗時: セクション5の調査手順を1回だけ実施して修正。2回目も不一致なら停止して実行ログに記録
 
 ### S4: 識別子をリネームし var を let/const にする
-- 変更対象: `src/` 配下10ファイル
+- 変更対象: `src/` 配下11ファイル
 - 作業内容:
   1. セクション7のリネーム表を全ファイルに適用する。`S`のプロパティ名も表に従って変更する（例: `S.bcount` → `S.boneCount`）
   2. 表にない関数内一時変数は変更しない
   3. `var` を全て `let` / `const` にする。再代入しないものは `const`、するものは `let`
+  4. `src/render.js` のローカル関数 `function isSolid(cc,rw){return solid(cc,rw);}` を削除し、`runRow` の第5引数にはimportした `isSolid` を直接渡す（判断記録#11）。同ファイルの `isTop` は残す
+  5. `src/input.js` の `KEY_MAP` の値を `'l'`→`'left'`、`'r'`→`'right'`、`'j'`→`'jump'`、`'s'`→`'shoot'` に変更する。あわせて `bindButton('bL','left')` のような呼び出し引数、`setInput` 内の比較 `k==='s'`→`k==='shoot'`、`k==='j'`→`k==='jump'` も揃える（判断記録#12）
+- **変更してはいけない文字列リテラル**（上記4・5以外の文字列は一切変えない）:
+  - ゲーム状態: `'title'` `'play'` `'over'` `'clear'`
+  - ボスの行動状態: `'wait'` `'intro'` `'idle'` `'jump'` `'shoot'` `'hop'` `'die'`
+  - 効果音名: `sfx()` に渡す全ての文字列（`'jump'` `'dj'` `'spring'` `'bone'` `'stomp'` `'hit'` `'shot'` `'chg'` `'big'` `'tink'` `'tshot'` `'bhit'` `'boom'` `'chk'` `'power'` `'start'` `'clear'`）
+  - 軸の指定: `resolveTiles` の第2引数 `'x'` `'y'`、移動床の `axis:'x'` `axis:'y'`
+  - タイル記号: `'#'` `'.'`
+  - DOM要素のid: `'cv'` `'ov'` `'ovT'` `'ovD'` `'ovB'` `'bL'` `'bR'` `'bJ'` `'bS'`
+  - イベント名、CSS色、日本語のUI文言
 - 検証:
   - `node tools/replay-check.mjs | tail -1` → `digest=f95011843bc0462d`
   - `grep -chE '^\s*var ' src/*.js | sort -u` → `0` のみ
@@ -210,3 +228,10 @@ target: /Users/komayuuta/project/games/test
 
 | 日時 | ステップ | 結果 | 検証出力（要約） | 逸脱・メモ |
 |---|---|---|---|---|
+| 2026-08-11 18:34:43 JST | S1 | 成功 | `digest=f95011843bc0462d`; `mode=module:src/main.js frames=3600 seed=12345 ops=737237 offscreen=13`; `0` | なし |
+| 2026-08-11 18:35:42 JST | S2 | 成功 | 初回: `ReferenceError: fx is not defined`; 再実行: `digest=f95011843bc0462d` | 状態参照の置換未適用を修正後、合格 |
+| 2026-08-11 18:37:28 JST | S3 | 中断 | 未実行 | `input.js` の `initA()` 依存と `cv` / `ctx` の所属が計画に未指定 |
+| 2026-08-11 18:45:59 JST | S3 | 成功 | `digest=f95011843bc0462d`; `      11` | なし |
+| 2026-08-11 18:49:05 JST | S4 | 中断 | 現状 `digest=f95011843bc0462d`; var件数の固有値 `0 1 2 15 28`; 旧名検査 `rc=0` | `solid`→`isSolid` が `render.js` の既存 `isSolid` と衝突。入力フィールド変更は旧略号の文字列リテラルを維持したまま `input[k]` を接続する方法が未指定 |
+| 2026-08-11 19:00:22 JST | S4 | 成功 | `digest=f95011843bc0462d`; モジュール数 `11`; module script `1`; inline script `0`; `ti ti-` `0`; var件数の固有値 `0`; 旧名検査 `rc=1` | 判断記録#11・#12に従って再開し、全完了条件に合格。Claude側の呼び出しは10分のタイムアウトで打ち切られたが、Codexは打ち切り前に全作業を終えていた |
+| 2026-08-11 19:05 JST | S5 | 合格 | 完了条件7項目をClaudeが再実行し全て一致。循環参照チェック0件。ブラウザ検収: 11モジュール全て200 OK、スタート・移動・ジャンプ・ショット・骨取得（HUDが×1／スコア50に更新）を確認、コンソールエラー0件 | 文字列リテラル（ボス状態7種・ゲーム状態4種・効果音15種）が保持されていることを個別に確認。`render.js`の`isSolid`ラッパー削除と`isTop`存続も確認 |
