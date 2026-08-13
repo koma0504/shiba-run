@@ -6,6 +6,7 @@ import {input} from './input.js';
 import {makeCanvas,roundRectOn,roundRect,triangleOn,triangle} from './draw.js';
 import {DRAW_ORDER,GIMMICKS} from './entities/index.js';
 import enemyBullet from './entities/enemyBullet.js';
+import {drawBoss} from './boss.js';
 
 // 背景や小物は毎フレーム描き直さず、起動時に一度だけ別canvasへ描いて使い回す
 let bgCv,fujiCv,hillCvs;
@@ -44,24 +45,7 @@ ctx.beginPath();ctx.arc(21.5,-28,2.4,0,TAU);ctx.fill();
 ctx.strokeStyle=C3;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(18,-25.5,2.4,0.3,2.6);ctx.stroke();
 ctx.fillStyle='#e2554a';roundRect(3,-21.5,13,3.5,2);ctx.fill();
 ctx.restore();}
-function drawBoss(camI){const bs=S.boss;
-if(bs.mode==='wait'||S.bossDead)return;
-if(bs.invincible>0&&((S.time>>1)&1)===0)return;
-const x=bs.x-camI+bs.w/2,y=bs.y+bs.h;
-ctx.save();ctx.translate(x,y);ctx.scale(bs.facing>0?2.1:-2.1,2.1);
-const D='#2e323b',G='#596070',G2='#454b59',WH='#eef1f5';
-ctx.strokeStyle=G;ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-15,-14);ctx.quadraticCurveTo(-24,-23,-19,-29);ctx.stroke();
-ctx.fillStyle=G2;roundRect(-12,-8,5,8,2);ctx.fill();roundRect(5,-8,5,8,2);ctx.fill();
-ctx.fillStyle=G;roundRect(-16,-24,32,18,8);ctx.fill();
-ctx.fillStyle='#c9412f';roundRect(-16,-24,32,5,2);ctx.fill();
-ctx.fillStyle=G;ctx.beginPath();ctx.arc(11,-24,9,0,TAU);ctx.fill();
-triangle(4,-30,7,-39,11,-30);triangle(12,-30,16,-39,18,-29);
-ctx.fillStyle='#8a93a5';ctx.beginPath();ctx.arc(11,-27,7,Math.PI,0);ctx.closePath();ctx.fill();
-ctx.fillStyle=WH;ctx.beginPath();ctx.ellipse(14,-21,5.5,4,0,0,TAU);ctx.fill();
-ctx.fillStyle=D;ctx.beginPath();ctx.arc(9,-24,1.7,0,TAU);ctx.fill();ctx.beginPath();ctx.arc(15,-24.5,1.7,0,TAU);ctx.fill();
-ctx.strokeStyle=D;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(5.5,-28);ctx.lineTo(10.5,-26);ctx.stroke();
-ctx.fillStyle='#d98a8a';ctx.beginPath();ctx.arc(17.5,-22,1.6,0,TAU);ctx.fill();
-ctx.restore();}
+
 const CLOUDS=[],HILLS=[];
 for(let i=0;i<14;i++)CLOUDS.push([60+i*270,55+((i*53)%100)]);
 for(let i=0;i<18;i++)HILLS.push([80+i*350,130+((i*97)%90)]);
