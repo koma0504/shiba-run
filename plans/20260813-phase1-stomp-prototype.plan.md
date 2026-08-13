@@ -1,6 +1,6 @@
 ---
 title: フェーズ1 最小プロトタイプ「着地禁止」モード
-status: draft        # draft | approved | in-progress | done | aborted
+status: aborted     # draft | approved | in-progress | done | aborted
 created: 2026-08-13
 planner: claude-opus-5
 executor: 未定
@@ -8,6 +8,11 @@ target: /home/user/shiba-run
 ---
 
 # 実行計画書: フェーズ1 最小プロトタイプ「着地禁止」モード
+
+> **この計画は中止された（2026-08-13、着手前）。**
+> 本人の判断で「現行の柴犬ランを完成させて出す」方針に転換したため（`product/decisions.md` D12）。
+> 内容は捨てない。**別案を試すことになったときの出発点として残す**。
+> 特に §2 の判断1〜4（既存を壊さずに新モードを足す方法）は、どんな案を試すときにも使える。
 
 経緯: `product/` のフェーズ0で、現行企画は G1 不通過として落とした（`product/decisions.md` D4）。
 20案から1案「着地禁止」が条件付きで生き残り（D9）、ワンシートまで書いた（`product/03-onesheet.md`）。
