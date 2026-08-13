@@ -20,14 +20,27 @@ jobs:
 
       - name: リプレイダイジェストの照合
         run: |
+          mkdir -p /tmp/dumps
+          rc=0
           for scenario in run boss stage2; do
             expected=$(grep "^${scenario}=" tools/replay-baseline.txt | cut -d= -f2)
             if [ -z "$expected" ]; then
               echo "tools/replay-baseline.txt に ${scenario} の基準値がありません" >&2
               exit 1
             fi
-            EXPECT="$expected" SCENARIO="$scenario" VERBOSE=1 node tools/replay-check.mjs
+            EXPECT="$expected" SCENARIO="$scenario" VERBOSE=1 \
+              DUMP=/tmp/dumps/$scenario.txt DUMP_LIMIT=200000 \
+              node tools/replay-check.mjs || rc=1
           done
+          exit $rc
+
+      # 環境差やリグレッションの調査用。落ちたときに描画ログを持ち帰れるようにする
+      - name: 描画ログの保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: replay-dumps
+          path: /tmp/dumps
 
       - name: 外部リソース参照がないことの確認
         run: |

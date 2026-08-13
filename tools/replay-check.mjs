@@ -258,7 +258,11 @@ const offscreen = allCanvases.filter((c) => c !== mainCanvas).map((c) => c.diges
 const mainHash = sha(mainCanvas.log.join('\n')).slice(0, 12);
 const digest = sha(mainHash + '|' + offscreen.join(',')).slice(0, 16);
 
-if (DUMP) await writeFile(DUMP, mainCanvas.log.join('\n') + '\n');
+if (DUMP) {
+  const limit = Number(process.env.DUMP_LIMIT || 0);
+  const lines = limit > 0 ? mainCanvas.log.slice(0, limit) : mainCanvas.log;
+  await writeFile(DUMP, lines.join('\n') + '\n');
+}
 if (process.env.VERBOSE) {
   console.log(`main=${mainHash}`);
   console.log(`offscreen=${offscreen.join(',')}`);
