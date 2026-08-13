@@ -3,8 +3,14 @@ import {STAGES} from './stages/index.js';
 import {S} from './state.js';
 import {sfx} from './audio.js';
 import {confetti} from './fx.js';
+import {save,setMuted} from './save.js';
 
 export const overlay=document.getElementById('ov'),overlayTitle=document.getElementById('ovT'),overlayDesc=document.getElementById('ovD'),overlayBtn=document.getElementById('ovB');
+
+const muteBtn=document.getElementById('bM');
+function syncMuteLabel(){muteBtn.textContent=save.muted?'🔇 消音中':'🔊 音あり';}
+muteBtn.addEventListener('click',function(){setMuted(!save.muted);syncMuteLabel();});
+syncMuteLabel();
 export function startGame(){S.state='play';overlay.style.display='none';sfx('start');}
 function showOverlay(t,d,b){overlayTitle.textContent=t;overlayDesc.innerHTML=d;overlayBtn.textContent=b;overlay.style.display='flex';}
 function formatTime(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}

@@ -174,6 +174,21 @@ globalThis.window = {
 };
 globalThis.requestAnimationFrame = (cb) => { rafCallback = cb; return 1; };
 globalThis.cancelAnimationFrame = () => {};
+
+// セーブ用の localStorage。毎回まっさらな状態から始まるので実行結果は変わらない。
+// スタブを置かないと src/save.js が ReferenceError で落ちて検証が起動すらしないが、
+// それ以上に「保存はするが、保存内容は挙動に影響しない」ことを実際に踏んで確かめたい。
+// ここが空のまま run/boss/stage2 のダイジェストが変わらなければ、その裏取りになる
+const storageData = new Map();
+globalThis.localStorage = {
+  getItem: (k) => (storageData.has(k) ? storageData.get(k) : null),
+  setItem: (k, v) => { storageData.set(k, String(v)); },
+  removeItem: (k) => { storageData.delete(k); },
+  clear: () => storageData.clear(),
+  key: (i) => [...storageData.keys()][i] ?? null,
+  get length() { return storageData.size; },
+};
+
 Math.random = seededRandom;
 
 // 入力スケジュール: 右に走り続けながら、周期的にジャンプ・ショット・チャージショットを行う。
