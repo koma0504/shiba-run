@@ -1,5 +1,6 @@
 import {initAudio} from './audio.js';
-import {S,resetAll} from './state.js';
+import {S} from './state.js';
+import {resetAll} from './reset.js';
 import {updateFx} from './fx.js';
 import {bindInput} from './input.js';
 import {overlayBtn,startGame} from './ui.js';

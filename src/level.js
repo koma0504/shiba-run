@@ -22,5 +22,10 @@ export const CROW_SPOTS=[[96,100,220,1.3],[115,120,344,1.6],[126,131,240,1.4],[1
 export const TURRET_SPOTS=[75,119,168,228];
 export const SPRING_SPOTS=[91,129,141,238];
 export const MEAT_SPOTS=[[110*TILE+8,348],[186*TILE+8,348]];
+// 移動床。axisが動く向き、from/toが往復の両端、periodが1往復のフレーム数
+export const MOVER_SPOTS=[
+{axis:'x',from:100*TILE+4,to:105*TILE-84,x:100*TILE+4,y:8*TILE+14,w:80,h:14,period:260,phase:0},
+{axis:'x',from:200*TILE+4,to:207*TILE-84,x:200*TILE+4,y:8*TILE+14,w:80,h:14,period:300,phase:0.8},
+{axis:'y',from:9*TILE+14,to:5*TILE+14,x:212*TILE+4,y:9*TILE+14,w:80,h:14,period:280,phase:1.5}];
 export const CHECKPOINTS=[48*TILE,108*TILE,160*TILE,210*TILE],GOAL_X=254*TILE,ARENA_LEFT=242*TILE,ARENA_RIGHT=258*TILE;
 export function isSolid(cc,rr){return rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&tileGrid[rr][cc]==='#';}

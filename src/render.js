@@ -3,24 +3,21 @@ import {ctx} from './canvas.js';
 import {CHECKPOINTS,GOAL_X,ARENA_LEFT,isSolid} from './level.js';
 import {S} from './state.js';
 import {input} from './input.js';
+import {makeCanvas,roundRectOn,roundRect,triangleOn,triangle} from './draw.js';
+import {DRAW_ORDER,GIMMICKS} from './entities/index.js';
+import enemyBullet from './entities/enemyBullet.js';
 
 let i;
-function makeCanvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
-function roundRectOn(c2,x,y,w,h,rad){c2.beginPath();c2.moveTo(x+rad,y);c2.arcTo(x+w,y,x+w,y+h,rad);c2.arcTo(x+w,y+h,x,y+h,rad);c2.arcTo(x,y+h,x,y,rad);c2.arcTo(x,y,x+w,y,rad);c2.closePath();}
-function roundRect(x,y,w,h,rad){roundRectOn(ctx,x,y,w,h,rad);}
-function triangleOn(c2,a,b2,c3,d,e,f){c2.beginPath();c2.moveTo(a,b2);c2.lineTo(c3,d);c2.lineTo(e,f);c2.closePath();c2.fill();}
-function triangle(a,b2,c3,d,e,f){triangleOn(ctx,a,b2,c3,d,e,f);}
+// 背景や小物は毎フレーム描き直さず、起動時に一度だけ別canvasへ描いて使い回す
 const bgCv=makeCanvas(VIEW_W,VIEW_H);(function(){const c=bgCv.getContext('2d');const sk=c.createLinearGradient(0,0,0,VIEW_H);sk.addColorStop(0,'#8ed4f7');sk.addColorStop(1,'#eaf9ff');c.fillStyle=sk;c.fillRect(0,0,VIEW_W,VIEW_H);c.fillStyle='#ffdf6b';c.beginPath();c.arc(566,66,32,0,TAU);c.fill();})();
 const cloudCv=makeCanvas(100,60);(function(){const c=cloudCv.getContext('2d');c.fillStyle='rgba(255,255,255,0.92)';c.beginPath();c.arc(24,36,20,0,TAU);c.arc(48,28,24,0,TAU);c.arc(76,36,19,0,TAU);c.fill();})();
 const fujiCv=makeCanvas(344,254);(function(){const c=fujiCv.getContext('2d');c.fillStyle='#9bb2d4';triangleOn(c,2,252,172,2,342,252);c.fillStyle='#ffffff';triangleOn(c,120,79,172,2,224,79);})();
 const hillCvs=['#8fd06b','#79bd55'].map(function(col){const c2=makeCanvas(400,200),c=c2.getContext('2d');c.fillStyle=col;c.beginPath();c.arc(200,200,200,Math.PI,0);c.fill();return c2;});
 const boneCv=makeCanvas(30,22);(function(){const c=boneCv.getContext('2d');c.translate(15,11);c.fillStyle='#fffdf4';roundRectOn(c,-9,-3.2,18,6.4,3);c.fill();[[-9,-4],[-9,4],[9,-4],[9,4]].forEach(function(q){c.beginPath();c.arc(q[0],q[1],4.4,0,TAU);c.fill();});})();
 const heartCvs=['#e2554a','#cfc8bb'].map(function(col){const c2=makeCanvas(18,16),c=c2.getContext('2d');c.translate(9,4);c.fillStyle=col;c.beginPath();c.arc(-3.4,-2,4,0,TAU);c.arc(3.4,-2,4,0,TAU);c.fill();triangleOn(c,-7.2,-0.5,7.2,-0.5,0,8);return c2;})
-const springCv=makeCanvas(36,32);(function(){const c=springCv.getContext('2d');c.translate(2,2);c.fillStyle='#6b6f78';roundRectOn(c,0,20,28,4,1);c.fill();c.strokeStyle='#d84f44';c.lineWidth=3;c.beginPath();c.moveTo(3,19);c.lineTo(25,15);c.lineTo(3,11);c.lineTo(25,7);c.lineTo(6,4);c.stroke();c.fillStyle='#8a8f99';roundRectOn(c,-2,0,32,5,2);c.fill();})();
 const meatCv=makeCanvas(40,26);(function(){const c=meatCv.getContext('2d');c.translate(20,13);c.fillStyle='#fffdf4';roundRectOn(c,-16,-3,10,6,3);c.fill();roundRectOn(c,6,-3,10,6,3);c.fill();c.beginPath();c.arc(-15,-5,3.4,0,TAU);c.arc(-15,5,3.4,0,TAU);c.fill();c.beginPath();c.arc(15,-5,3.4,0,TAU);c.arc(15,5,3.4,0,TAU);c.fill();c.fillStyle='#a85c28';c.beginPath();c.ellipse(0,0,11,9.5,0,0,TAU);c.fill();c.fillStyle='#c97c42';c.beginPath();c.ellipse(-1,-2.5,8,5.5,0,0,TAU);c.fill();})();
 const shotCv=makeCanvas(12,12);(function(){const c=shotCv.getContext('2d');c.fillStyle='#5aa9e6';c.beginPath();c.arc(6,6,4.5,0,TAU);c.fill();c.fillStyle='#eaf6ff';c.beginPath();c.arc(6,6,2.2,0,TAU);c.fill();})();
 const bigCv=makeCanvas(22,22);(function(){const c=bigCv.getContext('2d');c.fillStyle='#ffd23e';c.beginPath();c.arc(11,11,9,0,TAU);c.fill();c.fillStyle='#fff6d8';c.beginPath();c.arc(11,11,4.5,0,TAU);c.fill();})();
-const ebCv=makeCanvas(10,10);(function(){const c=ebCv.getContext('2d');c.fillStyle='#f0a03c';c.beginPath();c.arc(5,5,4,0,TAU);c.fill();c.fillStyle='#7a4b12';c.beginPath();c.arc(5,5,1.8,0,TAU);c.fill();})();
 function drawShiba(camI){if(S.player.invincible>0&&((S.time>>2)&1)===0)return;
 const cx=S.player.x+15-camI,cy=S.player.y+S.player.h;
 ctx.save();ctx.translate(cx,cy);ctx.scale(S.player.facing,1);
@@ -44,45 +41,6 @@ ctx.fillStyle=C3;ctx.beginPath();ctx.arc(11,-31,1.9,0,TAU);ctx.fill();
 ctx.beginPath();ctx.arc(21.5,-28,2.4,0,TAU);ctx.fill();
 ctx.strokeStyle=C3;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(18,-25.5,2.4,0.3,2.6);ctx.stroke();
 ctx.fillStyle='#e2554a';roundRect(3,-21.5,13,3.5,2);ctx.fill();
-ctx.restore();}
-function drawCat(ct,camI){const x=ct.x-camI,y=ct.y;
-ctx.save();ctx.translate(x+17,y+ct.h);ctx.scale(ct.facing>0?1:-1,1);
-const D='#343841',G='#8b93a1',G2='#6f7684',WH='#eef1f5';
-if(ct.deadTimer){ctx.globalAlpha=Math.max(0,1-ct.deadTimer/22);ctx.fillStyle=G;ctx.beginPath();ctx.ellipse(0,-4,17,4.5,0,0,TAU);ctx.fill();ctx.strokeStyle=D;ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(4,-7);ctx.lineTo(8,-3);ctx.moveTo(8,-7);ctx.lineTo(4,-3);ctx.stroke();ctx.restore();return;}
-const sw=Math.sin(S.time*0.25+ct.x)*3;
-ctx.strokeStyle=G;ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-15,-14);ctx.quadraticCurveTo(-23,-22,-19,-28);ctx.stroke();
-ctx.fillStyle=G2;roundRect(-12+sw*0.4,-8,5,8,2);ctx.fill();roundRect(5-sw*0.4,-8,5,8,2);ctx.fill();
-ctx.fillStyle=G;roundRect(-16,-24,32,18,8);ctx.fill();
-ctx.fillStyle=G2;roundRect(-8,-24,4,6,2);ctx.fill();roundRect(0,-24,4,6,2);ctx.fill();
-ctx.fillStyle=G;ctx.beginPath();ctx.arc(11,-24,9,0,TAU);ctx.fill();
-triangle(4,-30,7,-39,11,-30);triangle(12,-30,16,-39,18,-29);
-ctx.fillStyle=WH;ctx.beginPath();ctx.ellipse(14,-21,5.5,4,0,0,TAU);ctx.fill();
-ctx.fillStyle=D;ctx.beginPath();ctx.arc(9,-24.5,1.5,0,TAU);ctx.fill();ctx.beginPath();ctx.arc(15,-25,1.5,0,TAU);ctx.fill();
-ctx.strokeStyle=D;ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(6,-28);ctx.lineTo(10,-26.5);ctx.stroke();
-ctx.fillStyle='#d98a8a';ctx.beginPath();ctx.arc(17.5,-22,1.6,0,TAU);ctx.fill();
-ctx.restore();}
-function drawCrow(cr,camI){const x=cr.x-camI+15,y=cr.y+11;
-ctx.save();ctx.translate(x,y);ctx.scale(cr.facing>0?1:-1,1);
-const D='#3c4352';
-if(cr.deadTimer){ctx.globalAlpha=Math.max(0,1-cr.deadTimer/40);ctx.rotate(cr.deadTimer*0.2);}
-const fl=Math.sin(S.time*0.4+cr.phase)*7;
-ctx.fillStyle=D;
-triangle(-4,-2,-14,-2-fl-6,4,-4);
-ctx.beginPath();ctx.ellipse(0,0,13,8,0,0,TAU);ctx.fill();
-triangle(-13,-2,-20,4,-12,5);
-ctx.beginPath();ctx.arc(11,-4,6,0,TAU);ctx.fill();
-ctx.fillStyle='#f0a03c';triangle(16,-5,23,-3,16,-1);
-ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(12,-5,1.6,0,TAU);ctx.fill();
-ctx.fillStyle='#3c4352';ctx.beginPath();ctx.arc(12.5,-5,0.8,0,TAU);ctx.fill();
-ctx.restore();}
-function drawTurret(tu,camI){const x=tu.x-camI,y=tu.y;
-ctx.save();ctx.translate(x+15,y+tu.h);
-const fl=tu.hitFlash>0,G=fl?'#e8ecf2':'#6f7684',G2=fl?'#ffffff':'#4c515c';
-ctx.fillStyle=G2;roundRect(-16,-8,32,8,2);ctx.fill();
-ctx.fillStyle=G;ctx.beginPath();ctx.arc(0,-12,13,Math.PI,0);ctx.closePath();ctx.fill();
-ctx.fillStyle=G;triangle(-11,-22,-7,-31,-3,-23);triangle(3,-23,7,-31,11,-22);
-ctx.fillStyle=G2;roundRect(tu.facing>0?4:-18,-17,14,6,3);ctx.fill();
-ctx.fillStyle=tu.cooldown<30?'#e2554a':'#9aa2af';ctx.beginPath();ctx.arc(tu.facing>0?-6:6,-15,2.4,0,TAU);ctx.fill();
 ctx.restore();}
 function drawBoss(camI){const bs=S.boss;
 if(bs.mode==='wait'||S.bossDead)return;
@@ -109,6 +67,7 @@ function drawMeterBar(x,y,val,mx2,segH,col){ctx.fillStyle='rgba(20,26,34,0.55)';
 ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fillRect(x,y,10,mx2*segH-2);
 ctx.fillStyle=col;
 for(let k=0;k<val;k++)ctx.fillRect(x,y+(mx2-1-k)*segH,10,segH-2);}
+// 同じ行の連続するタイルを1回のfillRectでまとめて塗る
 function runRow(camI,c0,c1,rw,cond,y,h,col){ctx.fillStyle=col;let st=-1;
 for(let cc=c0;cc<=c1+1;cc++){const ok=cc<=c1&&cond(cc,rw);
 if(ok&&st<0)st=cc;
@@ -119,6 +78,7 @@ if(S.bossStarted&&!S.bossDead)tgt=ARENA_LEFT;else tgt=Math.min(Math.max(S.player
 S.cameraX+=(tgt-S.cameraX)*0.15;if(Math.abs(tgt-S.cameraX)<0.5)S.cameraX=tgt;
 const camI=Math.round(S.cameraX);let sx,k;
 ctx.drawImage(bgCv,0,0);
+// 遠景ほどゆっくり流して奥行きを出す
 const fxp=Math.round(588-camI*0.15);
 ctx.drawImage(fujiCv,fxp,188);
 for(k=0;k<CLOUDS.length;k++){sx=CLOUDS[k][0]-camI*0.3;if(sx<-110||sx>VIEW_W+10)continue;ctx.drawImage(cloudCv,sx|0,CLOUDS[k][1]);}
@@ -128,10 +88,7 @@ for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isSolid,rw*TILE,TILE,'#b07a4e');
 for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isSolid,rw*TILE+TILE-6,6,'rgba(0,0,0,0.08)');
 for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isTop,rw*TILE,12,'#79c94f');
 for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isTop,rw*TILE,5,'#93dd66');
-for(k=0;k<S.movers.length;k++){const m=S.movers[k];const mvx=m.x-camI;
-if(mvx>-100&&mvx<VIEW_W+40){ctx.fillStyle='#7a8290';roundRect(mvx,m.y,m.w,m.h,4);ctx.fill();ctx.fillStyle='#93dd66';roundRect(mvx,m.y,m.w,5,3);ctx.fill();}}
-for(k=0;k<S.springs.length;k++){const s=S.springs[k];sx=s.x-camI;if(sx<-60||sx>VIEW_W+60)continue;
-if(s.squash>0)ctx.drawImage(springCv,sx-2,s.y+9,36,19);else ctx.drawImage(springCv,sx-2,s.y-3);}
+for(const g of GIMMICKS)g.draw(camI);
 for(k=0;k<CHECKPOINTS.length;k++){const kx=CHECKPOINTS[k]-camI;
 if(kx>-40&&kx<VIEW_W+40){ctx.fillStyle='#8a6b4a';ctx.fillRect(kx,376,5,64);ctx.fillStyle=S.checkpointIndex>=k?'#f0a03c':'#cbbfae';ctx.beginPath();ctx.arc(kx+2.5,366,13,0,TAU);ctx.fill();ctx.fillStyle='#5c452c';ctx.beginPath();ctx.arc(kx+2.5,369,4,0,TAU);ctx.arc(kx-3.5,362,2.2,0,TAU);ctx.arc(kx+2.5,360,2.2,0,TAU);ctx.arc(kx+8.5,362,2.2,0,TAU);ctx.fill();}}
 const hx=GOAL_X-camI;
@@ -141,6 +98,7 @@ ctx.fillStyle='#ffd23e';triangle(hx-21,298,hx+26,313,hx-21,328);
 ctx.fillStyle='#7a5a10';ctx.beginPath();ctx.arc(hx-8,313,3,0,TAU);ctx.arc(hx-13,307,1.7,0,TAU);ctx.arc(hx-8,305,1.7,0,TAU);ctx.arc(hx-3,307,1.7,0,TAU);ctx.fill();
 ctx.fillStyle='#cf5a4f';roundRect(hx,336,116,104,6);ctx.fill();
 ctx.fillStyle='#8f3a33';triangle(hx-12,344,hx+58,294,hx+128,344);
+// ボスを倒すまで扉に閂がかかっている
 ctx.fillStyle=S.bossDead?'#57241f':'#7d6a63';ctx.beginPath();ctx.moveTo(hx+38,440);ctx.lineTo(hx+38,396);ctx.arc(hx+58,396,20,Math.PI,0);ctx.lineTo(hx+78,440);ctx.closePath();ctx.fill();
 if(!S.bossDead){ctx.strokeStyle='#5a4b45';ctx.lineWidth=3;ctx.beginPath();for(k=0;k<3;k++){ctx.moveTo(hx+42,392+k*15);ctx.lineTo(hx+74,392+k*15);}ctx.stroke();}
 ctx.drawImage(boneCv,hx+43,351);}
@@ -148,15 +106,13 @@ for(k=0;k<S.bones.length;k++){const b=S.bones[k];if(b.taken)continue;const bx=b.
 ctx.drawImage(boneCv,bx-15,(b.y-11+Math.sin(S.time*0.08+b.x)*3)|0);}
 for(k=0;k<S.meats.length;k++){const mt=S.meats[k];if(mt.taken)continue;const mx3=mt.x-camI;if(mx3<-40||mx3>VIEW_W+40)continue;
 ctx.drawImage(meatCv,mx3-20,(mt.y-13+Math.sin(S.time*0.08)*3)|0);}
-for(k=0;k<S.turrets.length;k++){if(S.turrets[k].deadTimer||S.turrets[k].x-camI<-60||S.turrets[k].x-camI>VIEW_W+60)continue;drawTurret(S.turrets[k],camI);}
-for(k=0;k<S.cats.length;k++){if(S.cats[k].x-camI<-60||S.cats[k].x-camI>VIEW_W+60)continue;drawCat(S.cats[k],camI);}
-for(k=0;k<S.crows.length;k++){if(S.crows[k].x-camI<-60||S.crows[k].x-camI>VIEW_W+60)continue;drawCrow(S.crows[k],camI);}
+for(const def of DRAW_ORDER)def.draw(camI);
 if(S.bossStarted)drawBoss(camI);
 drawShiba(camI);
 for(k=0;k<S.shots.length;k++){const sh=S.shots[k];const shx=sh.x-camI;
 if(sh.isCharged){ctx.globalAlpha=0.5;ctx.drawImage(bigCv,(shx-sh.vx*1.2-11)|0,sh.y-11);ctx.globalAlpha=1;ctx.drawImage(bigCv,(shx-11)|0,sh.y-11);}
 else{ctx.globalAlpha=0.45;ctx.drawImage(shotCv,(shx-sh.vx*1.3-6)|0,sh.y-6);ctx.globalAlpha=1;ctx.drawImage(shotCv,(shx-6)|0,sh.y-6);}}
-for(k=0;k<S.enemyBullets.length;k++){const eb=S.enemyBullets[k];ctx.drawImage(ebCv,(eb.x-camI-5)|0,(eb.y-5)|0);}
+enemyBullet.draw(camI);
 for(k=0;k<S.particles.length;k++){const f=S.particles[k];const fx2=f.x-camI;if(fx2<-20||fx2>VIEW_W+20)continue;ctx.globalAlpha=f.life/f.maxLife;ctx.fillStyle=f.color;ctx.fillRect(fx2-f.size/2,f.y-f.size/2,f.size,f.size);}
 ctx.globalAlpha=1;
 ctx.font='500 13px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
