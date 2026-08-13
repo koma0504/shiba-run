@@ -5,7 +5,7 @@ import {updateFx} from './fx.js';
 import {bindInput} from './input.js';
 import {overlayBtn,startGame,consumeNextStage,togglePause,resumeGame,showTitle,bindUi} from './ui.js';
 import {tryFire,step} from './game.js';
-import {render} from './render.js';
+import {render,updateCamera} from './render.js';
 
 bindInput({fire:tryFire,startGame:startGame,togglePause:togglePause});
 bindUi({resetAll:resetAll});
@@ -30,7 +30,12 @@ function loop(ts){requestAnimationFrame(loop);if(!last)last=ts;let dt=ts-last;la
 if(S.state==='pause')return;
 accum+=dt;
 let steps=0;
-while(accum>=16.6667&&steps<3){if(S.state==='play')step();updateFx();if(S.state!=='play')S.time++;accum-=16.6667;steps++;}
+// カメラの補間は以前 render() の中にあった。表示のリフレッシュレートで走るため、
+// 120Hzのモニタではカメラが2倍の速さで追従していた。ゲームが進むのと同じ刻みへ移す
+while(accum>=16.6667&&steps<3){if(S.state==='play')step();updateFx();updateCamera();if(S.state!=='play')S.time++;accum-=16.6667;steps++;}
 if(steps===3)accum=0;
-render();}
+// 描くのはゲームが進んだときだけ。step は60回/秒に固定されているのに、render は
+// 表示のリフレッシュレートで走っていた。実測で120Hzなら描画量1.89倍、144Hzなら2.75倍。
+// 進んでいないフレームを描き直しても、まったく同じ絵をもう一度描くだけで無駄になる
+if(steps>0)render();}
 requestAnimationFrame(loop);

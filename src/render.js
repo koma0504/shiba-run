@@ -60,9 +60,14 @@ for(let n=0;n<runs.length;n+=2){const a=runs[n],b=runs[n+1];
 if(b<c0)continue;if(a>c1)break;
 const s=a<c0?c0:a,e=b>c1?c1:b;
 ctx.fillRect(s*TILE-camI,y,(e+1-s)*TILE,h);}}
-export function render(){let tgt;
+// カメラの追従。main.js が固定の刻みで呼ぶ。
+// 以前は render() の先頭にあったが、それだと表示のリフレッシュレートで走るため、
+// 120Hzのモニタではカメラが2倍の速さで追従していた（性能ではなく挙動の環境依存）
+export function updateCamera(){let tgt;
 if(S.bossStarted&&!S.bossDead)tgt=stage.arenaLeft;else tgt=Math.min(Math.max(S.player.x-VIEW_W*0.4,0),stage.worldW-VIEW_W);
-S.cameraX+=(tgt-S.cameraX)*0.15;if(Math.abs(tgt-S.cameraX)<0.5)S.cameraX=tgt;
+S.cameraX+=(tgt-S.cameraX)*0.15;if(Math.abs(tgt-S.cameraX)<0.5)S.cameraX=tgt;}
+
+export function render(){
 const camI=Math.round(S.cameraX);let sx,k;
 ctx.drawImage(bgCv,0,0);
 // 遠景ほどゆっくり流して奥行きを出す
