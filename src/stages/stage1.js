@@ -53,7 +53,8 @@ export default {
     ],
   },
 
-  checkpoints: [48*TILE,108*TILE,160*TILE,210*TILE],
+  // 最後の1つはボス部屋の直前。ここがないと力尽きるたびに5秒走り直しになる
+  checkpoints: [48*TILE,108*TILE,160*TILE,210*TILE,240*TILE],
   goalX: 254*TILE,
   arenaLeft: 242*TILE,
   arenaRight: 258*TILE,
@@ -62,7 +63,9 @@ export default {
     name: 'ニャン大将',
     triggerX: 243*TILE,
     spawnX: 250*TILE,
-    hp: 20,
+    hp: 16,
     w: 70, h: 56,
+    // 接触したときにプレイヤーが受けるダメージ。面ごとに手応えを変えられる
+    touchDamage: 2,
   },
 };

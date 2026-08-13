@@ -130,7 +130,7 @@ ctx.fillStyle='rgba(255,255,255,0.82)';roundRect(VIEW_W/2-66,8,132,30,15);ctx.fi
 ctx.fillStyle='#5a4632';ctx.textAlign='center';ctx.fillText('スコア '+S.score,VIEW_W/2,24);ctx.textAlign='left';
 if(S.powerTimer>0){ctx.fillStyle='rgba(255,255,255,0.82)';roundRect(VIEW_W/2-42,42,84,10,5);ctx.fill();ctx.fillStyle=(S.powerTimer<120&&((S.time>>2)&1)===0)?'#e2554a':'#f0a03c';roundRect(VIEW_W/2-39,44,78*(S.powerTimer/480),6,3);ctx.fill();}
 drawMeterBar(10,46,S.hp,HP_MAX,9,S.hp<=2&&((S.time>>3)&1)===0?'#e2554a':'#79c94f');
-if(S.bossStarted&&!S.bossDead){const shown=S.boss.mode==='intro'?Math.floor(S.boss.hpMax*Math.min(1,S.boss.timer/60)):S.boss.hp;
+if(S.bossStarted&&!S.bossDead){const shown=S.boss.mode==='intro'?Math.floor(S.boss.hp*Math.min(1,S.boss.timer/60)):S.boss.hp;
 drawMeterBar(30,46,shown,S.boss.hpMax,5,'#f0a03c');}
 ctx.fillStyle='rgba(255,255,255,0.82)';roundRect(VIEW_W-142,8,134,30,15);ctx.fill();
 for(k=0;k<5;k++)ctx.drawImage(heartCvs[k<S.lives?0:1],VIEW_W-129+k*24,14);}

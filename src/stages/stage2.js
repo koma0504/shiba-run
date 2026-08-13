@@ -64,8 +64,9 @@ export default {
     name: 'ニャン提督',
     triggerX: 163*TILE,
     spawnX: 170*TILE,
-    // 1面より体力が多い
-    hp: 28,
+    // 1面（16）より手強い
+    hp: 22,
     w: 70, h: 56,
+    touchDamage: 2,
   },
 };

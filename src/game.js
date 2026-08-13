@@ -117,7 +117,7 @@ if(bs.hopsLeft>0){bs.vy=-8;bs.vx=bs.facing*3;}else{bs.vx=0;bs.mode='idle';bs.tim
 if(S.state==='play'&&rectsOverlap(S.player,bs)){
 if(S.powerTimer>0){if(S.powerHitCooldown<=0){damageBoss(1);S.powerHitCooldown=20;}}
 else if(S.player.vy>1&&S.player.y+S.player.h<bs.y+bs.h*0.5){damageBoss(1);S.player.vy=-10;S.player.usedDoubleJump=false;}
-else hurtPlayer(2,bs.x+bs.w/2);}}
+else hurtPlayer(stage.boss.touchDamage,bs.x+bs.w/2);}}
 
 export function step(){S.time++;S.playFrames++;
 for(const g of GIMMICKS)if(g.advance)g.advance();
