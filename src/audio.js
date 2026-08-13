@@ -1,6 +1,9 @@
+import {save} from './save.js';
 let audioCtx=null;
 export function initAudio(){if(audioCtx)return;try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.resume)audioCtx.resume();}catch(e){}}
-export function tone(f0,f1,d,type,vol,delay){if(!audioCtx)return;try{const t=audioCtx.currentTime+(delay||0);const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.type=type||'square';o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+d);gn.gain.setValueAtTime(vol||0.12,t);gn.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(gn);gn.connect(audioCtx.destination);o.start(t);o.stop(t+d+0.02);}catch(e){}}
+// 音を出す出口はここ1つだけ。sfx()の呼び出し側は20箇所以上あるので、
+// 呼び出し側で止めると必ず漏れる
+export function tone(f0,f1,d,type,vol,delay){if(save.muted||!audioCtx)return;try{const t=audioCtx.currentTime+(delay||0);const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.type=type||'square';o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+d);gn.gain.setValueAtTime(vol||0.12,t);gn.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(gn);gn.connect(audioCtx.destination);o.start(t);o.stop(t+d+0.02);}catch(e){}}
 export function sfx(n){if(n==='jump')tone(280,620,0.13,'square',0.08);
 else if(n==='dj')tone(420,820,0.11,'square',0.08);
 else if(n==='spring')tone(170,920,0.2,'square',0.12);

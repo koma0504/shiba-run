@@ -23,8 +23,23 @@ import { join } from 'node:path';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SCENARIO = process.env.SCENARIO || 'run';
-const FRAMES = Number(process.env.FRAMES || (SCENARIO === 'boss' ? 1800 : 3600));
-const SCENARIOS = ['run', 'boss', 'stage2'];
+const SCENARIOS = ['run', 'boss', 'stage2', 'pause'];
+
+// pauseシナリオ: runとまったく同じ操作を流しながら、途中で3回ポーズを挟む。
+// ポーズ中はゲームが1フレームも進まないので、入力スケジュールも時刻も据え置く。
+// 進んだフレーム数がrunと同じ3600になるよう、止めた分だけ全体を延ばす。
+// 結果は run と1文字も違わないダイジェストになるはず。
+// 違ったら、ポーズが素通しになっていないか、再開時に入力や時間が漏れている。
+//
+// 止める位置は「ゲームが進んだフレーム数」で指定する。生のフレーム番号で書くと、
+// 前のポーズの長さだけ後ろがずれて、狙った場面を外す。
+// またポーズが効くのは遊んでいる間だけ。runシナリオが実際に遊んでいるのは5〜795フレームで、
+// 残り2800フレームはゲームオーバー画面なので、そこで止めようとしても素通りする
+const PAUSE_AT = [[200, 90], [450, 60], [700, 130]];  // [止め始めるゲームフレーム, 止める長さ]
+const PAUSED_TOTAL = PAUSE_AT.reduce((n, [, length]) => n + length, 0);
+
+const BASE_FRAMES = SCENARIO === 'boss' ? 1800 : 3600;
+const FRAMES = Number(process.env.FRAMES || BASE_FRAMES + (SCENARIO === 'pause' ? PAUSED_TOTAL : 0));
 const SEED = Number(process.env.SEED || 12345);
 const DUMP = process.env.DUMP || '';
 const EXPECT = (process.env.EXPECT || '').trim();
@@ -130,18 +145,36 @@ function makeCanvas(w = 300, h = 150) {
 }
 
 function makeEl(id) {
-  return {
+  // 面セレクトはボタンを組み立てて並べる。canvasには一切触らないので描画列には出ないが、
+  // appendChild などが無いと例外になり、検証がそこで止まってしまう
+  const el = {
     id,
     style: {},
     textContent: '',
-    innerHTML: '',
     className: '',
+    disabled: false,
+    children: [],
+    appendChild(child) { this.children.push(child); return child; },
+    removeChild(child) {
+      const at = this.children.indexOf(child);
+      if (at >= 0) this.children.splice(at, 1);
+      return child;
+    },
+    setAttribute() {},
     addEventListener() {},
     removeEventListener() {},
     getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }),
     focus() {},
     click() {},
   };
+  // innerHTML='' で子を消せるようにしておく。実ブラウザはそう振る舞うので、
+  // 単なる文字列にしておくと「組み直したのに増え続ける」という嘘の観測になる
+  let html = '';
+  Object.defineProperty(el, 'innerHTML', {
+    get: () => html,
+    set: (next) => { html = String(next); if (html === '') el.children.length = 0; },
+  });
+  return el;
 }
 
 const mainCanvas = makeCanvas(640, 480);
@@ -174,6 +207,21 @@ globalThis.window = {
 };
 globalThis.requestAnimationFrame = (cb) => { rafCallback = cb; return 1; };
 globalThis.cancelAnimationFrame = () => {};
+
+// セーブ用の localStorage。毎回まっさらな状態から始まるので実行結果は変わらない。
+// スタブを置かないと src/save.js が ReferenceError で落ちて検証が起動すらしないが、
+// それ以上に「保存はするが、保存内容は挙動に影響しない」ことを実際に踏んで確かめたい。
+// ここが空のまま run/boss/stage2 のダイジェストが変わらなければ、その裏取りになる
+const storageData = new Map();
+globalThis.localStorage = {
+  getItem: (k) => (storageData.has(k) ? storageData.get(k) : null),
+  setItem: (k, v) => { storageData.set(k, String(v)); },
+  removeItem: (k) => { storageData.delete(k); },
+  clear: () => storageData.clear(),
+  key: (i) => [...storageData.keys()][i] ?? null,
+  get length() { return storageData.size; },
+};
+
 Math.random = seededRandom;
 
 // 入力スケジュール: 右に走り続けながら、周期的にジャンプ・ショット・チャージショットを行う。
@@ -207,8 +255,10 @@ if (moduleSrc) {
   new Function(inline[1])();
 }
 
-// 開始12フレーム目に一度だけ実行する仕込み。シナリオごとに違う
+// 開始12フレーム目に一度だけ実行する仕込み。シナリオごとに違う。
+// pauseはrunと同じ面を同じ条件で走らせる（違いはポーズを挟むことだけ）ので仕込みは要らない
 let setup = null;
+let liveState = null;   // ポーズが本当に効いたかを覗いて確かめるため
 if (SCENARIO !== 'run') {
   if (!moduleSrc) {
     console.error(`${SCENARIO}シナリオはモジュール版のみ対応しています`);
@@ -216,7 +266,10 @@ if (SCENARIO !== 'run') {
   }
   const { S } = await import(pathToFileURL(join(ROOT, 'src/state.js')).href);
   const { TILE } = await import(pathToFileURL(join(ROOT, 'src/config.js')).href);
-  if (SCENARIO === 'boss') {
+  liveState = S;
+  if (SCENARIO === 'pause') {
+    // 仕込みは要らない。runと同じ面を同じ条件で走らせ、違いはポーズを挟むことだけ
+  } else if (SCENARIO === 'boss') {
     // 中間地点も最後のものに合わせ、被弾死してもアリーナ付近から再開させる
     setup = () => {
       S.checkpointIndex = 3;
@@ -245,22 +298,60 @@ const chunkMarks = [];
 let previous = {};
 let timestamp = 0;
 let ranFrames = 0;
+// ゲームが実際に進んだフレーム数。ポーズ中は増えない。
+// 入力スケジュールも区間ハッシュもこちらで数える。そうしないとポーズを挟んだ分だけ
+// 操作列がずれてしまい、runとの比較が成立しない
+let gameFrame = 0;
+let pausedNow = false;
+let pauseLeft = 0;
+let pauseIndex = 0;
 for (let f = 0; f < FRAMES; f++) {
-  if (f > 0 && f % CHUNK === 0) chunkMarks.push([f, mainCanvas.log.length]);
-  if (f === 12 && setup) setup();
-  const current = inputsAt(f);
-  for (const code of KEYS) {
-    if (current[code] && !previous[code]) fireKey('keydown', code);
-    if (!current[code] && previous[code]) fireKey('keyup', code);
+  if (SCENARIO === 'pause' && pauseLeft === 0 && pauseIndex < PAUSE_AT.length
+      && gameFrame === PAUSE_AT[pauseIndex][0]) {
+    pauseLeft = PAUSE_AT[pauseIndex][1];
+    pauseIndex++;
   }
-  previous = current;
+  const wantPause = pauseLeft > 0;
+  if (wantPause) pauseLeft--;
+  if (wantPause !== pausedNow) {
+    fireKey('keydown', 'Escape');
+    fireKey('keyup', 'Escape');
+    pausedNow = wantPause;
+    // 止めたつもりで止まっていなければ、ここで気づけるようにする。
+    // ゲームオーバー中など遊んでいない場面ではポーズは効かず、黙って素通りしてしまう
+    const expected = wantPause ? 'pause' : 'play';
+    if (liveState.state !== expected) {
+      console.error(`フレーム${f}（ゲーム${gameFrame}）でポーズが効きませんでした。`);
+      console.error(`期待した状態は ${expected} ですが、実際は ${liveState.state} です。`);
+      console.error('遊んでいる最中に止めるよう PAUSE_AT を見直してください。');
+      process.exit(1);
+    }
+  }
+  if (!wantPause) {
+    if (gameFrame > 0 && gameFrame % CHUNK === 0) chunkMarks.push([gameFrame, mainCanvas.log.length]);
+    if (gameFrame === 12 && setup) setup();
+    const current = inputsAt(gameFrame);
+    for (const code of KEYS) {
+      if (current[code] && !previous[code]) fireKey('keydown', code);
+      if (!current[code] && previous[code]) fireKey('keyup', code);
+    }
+    previous = current;
+    gameFrame++;
+    // 時刻を進めるのはゲームが進むフレームだけ。ポーズ中は同じ時刻で呼び直す。
+    //
+    // こうしないと、ゲームが進むフレームに渡る時刻がrunとポーズ分だけずれる。
+    // 固定ステップの積算は dt = ts - last の浮動小数の端数を繰り越して動くので、
+    // 時刻の絶対値が変わると端数の出方も変わり、たまに1フレームで2回進む。
+    // それはポーズの副作用ではなく、この検証ツールが時刻を作っている都合による差。
+    // 同じ時刻列を渡してこそ「ポーズがゲームを乱していない」ことだけを見られる。
+    timestamp += 16.6667;
+  }
   const cb = rafCallback;
   rafCallback = null;
   if (!cb) {
     console.error(`フレーム${f}でrequestAnimationFrameが途切れました`);
     process.exit(1);
   }
-  timestamp += 16.6667;
   cb(timestamp);
   ranFrames++;
 }
@@ -281,7 +372,8 @@ if (process.env.VERBOSE) {
     console.log(`  frame${frame}: ${sha(mainCanvas.log.slice(0, upto).join('\n')).slice(0, 12)}`);
   }
 }
-console.log(`scenario=${SCENARIO} mode=${mode} frames=${ranFrames} seed=${SEED} ops=${mainCanvas.log.length} offscreen=${offscreen.length}`);
+const pausedNote = SCENARIO === 'pause' ? ` paused=${ranFrames - gameFrame}` : '';
+console.log(`scenario=${SCENARIO} mode=${mode} frames=${gameFrame}${pausedNote} seed=${SEED} ops=${mainCanvas.log.length} offscreen=${offscreen.length}`);
 console.log(`digest=${digest}`);
 
 if (EXPECT && EXPECT !== digest) {
