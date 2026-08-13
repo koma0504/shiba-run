@@ -1,6 +1,6 @@
-import {TAU,VIEW_W,VIEW_H,TILE,COLS,ROWS,WORLD_W,HP_MAX} from './config.js';
+import {TAU,VIEW_W,VIEW_H,TILE,ROWS,HP_MAX} from './config.js';
 import {ctx} from './canvas.js';
-import {CHECKPOINTS,GOAL_X,ARENA_LEFT,isSolid} from './level.js';
+import {stage,isSolid} from './stage.js';
 import {S} from './state.js';
 import {input} from './input.js';
 import {makeCanvas,roundRectOn,roundRect,triangleOn,triangle} from './draw.js';
@@ -9,10 +9,13 @@ import enemyBullet from './entities/enemyBullet.js';
 
 let i;
 // 背景や小物は毎フレーム描き直さず、起動時に一度だけ別canvasへ描いて使い回す
-const bgCv=makeCanvas(VIEW_W,VIEW_H);(function(){const c=bgCv.getContext('2d');const sk=c.createLinearGradient(0,0,0,VIEW_H);sk.addColorStop(0,'#8ed4f7');sk.addColorStop(1,'#eaf9ff');c.fillStyle=sk;c.fillRect(0,0,VIEW_W,VIEW_H);c.fillStyle='#ffdf6b';c.beginPath();c.arc(566,66,32,0,TAU);c.fill();})();
+let bgCv,fujiCv,hillCvs;
+// 空・山・丘はテーマで色が変わるので、面を読み込むたびに描き直す
+export function buildTheme(){const t=stage.theme;
+bgCv=makeCanvas(VIEW_W,VIEW_H);{const c=bgCv.getContext('2d');const sk=c.createLinearGradient(0,0,0,VIEW_H);sk.addColorStop(0,t.skyTop);sk.addColorStop(1,t.skyBottom);c.fillStyle=sk;c.fillRect(0,0,VIEW_W,VIEW_H);c.fillStyle=t.sun;c.beginPath();c.arc(566,66,32,0,TAU);c.fill();}
+fujiCv=makeCanvas(344,254);{const c=fujiCv.getContext('2d');c.fillStyle=t.mountain;triangleOn(c,2,252,172,2,342,252);c.fillStyle=t.mountainCap;triangleOn(c,120,79,172,2,224,79);}
+hillCvs=t.hills.map(function(col){const c2=makeCanvas(400,200),c=c2.getContext('2d');c.fillStyle=col;c.beginPath();c.arc(200,200,200,Math.PI,0);c.fill();return c2;});}
 const cloudCv=makeCanvas(100,60);(function(){const c=cloudCv.getContext('2d');c.fillStyle='rgba(255,255,255,0.92)';c.beginPath();c.arc(24,36,20,0,TAU);c.arc(48,28,24,0,TAU);c.arc(76,36,19,0,TAU);c.fill();})();
-const fujiCv=makeCanvas(344,254);(function(){const c=fujiCv.getContext('2d');c.fillStyle='#9bb2d4';triangleOn(c,2,252,172,2,342,252);c.fillStyle='#ffffff';triangleOn(c,120,79,172,2,224,79);})();
-const hillCvs=['#8fd06b','#79bd55'].map(function(col){const c2=makeCanvas(400,200),c=c2.getContext('2d');c.fillStyle=col;c.beginPath();c.arc(200,200,200,Math.PI,0);c.fill();return c2;});
 const boneCv=makeCanvas(30,22);(function(){const c=boneCv.getContext('2d');c.translate(15,11);c.fillStyle='#fffdf4';roundRectOn(c,-9,-3.2,18,6.4,3);c.fill();[[-9,-4],[-9,4],[9,-4],[9,4]].forEach(function(q){c.beginPath();c.arc(q[0],q[1],4.4,0,TAU);c.fill();});})();
 const heartCvs=['#e2554a','#cfc8bb'].map(function(col){const c2=makeCanvas(18,16),c=c2.getContext('2d');c.translate(9,4);c.fillStyle=col;c.beginPath();c.arc(-3.4,-2,4,0,TAU);c.arc(3.4,-2,4,0,TAU);c.fill();triangleOn(c,-7.2,-0.5,7.2,-0.5,0,8);return c2;})
 const meatCv=makeCanvas(40,26);(function(){const c=meatCv.getContext('2d');c.translate(20,13);c.fillStyle='#fffdf4';roundRectOn(c,-16,-3,10,6,3);c.fill();roundRectOn(c,6,-3,10,6,3);c.fill();c.beginPath();c.arc(-15,-5,3.4,0,TAU);c.arc(-15,5,3.4,0,TAU);c.fill();c.beginPath();c.arc(15,-5,3.4,0,TAU);c.arc(15,5,3.4,0,TAU);c.fill();c.fillStyle='#a85c28';c.beginPath();c.ellipse(0,0,11,9.5,0,0,TAU);c.fill();c.fillStyle='#c97c42';c.beginPath();c.ellipse(-1,-2.5,8,5.5,0,0,TAU);c.fill();})();
@@ -74,7 +77,7 @@ if(ok&&st<0)st=cc;
 else if(!ok&&st>=0){ctx.fillRect(st*TILE-camI,y,(cc-st)*TILE,h);st=-1;}}}
 function isTop(cc,rw){return isSolid(cc,rw)&&!isSolid(cc,rw-1);}
 export function render(){let tgt;
-if(S.bossStarted&&!S.bossDead)tgt=ARENA_LEFT;else tgt=Math.min(Math.max(S.player.x-VIEW_W*0.4,0),WORLD_W-VIEW_W);
+if(S.bossStarted&&!S.bossDead)tgt=stage.arenaLeft;else tgt=Math.min(Math.max(S.player.x-VIEW_W*0.4,0),stage.worldW-VIEW_W);
 S.cameraX+=(tgt-S.cameraX)*0.15;if(Math.abs(tgt-S.cameraX)<0.5)S.cameraX=tgt;
 const camI=Math.round(S.cameraX);let sx,k;
 ctx.drawImage(bgCv,0,0);
@@ -83,15 +86,15 @@ const fxp=Math.round(588-camI*0.15);
 ctx.drawImage(fujiCv,fxp,188);
 for(k=0;k<CLOUDS.length;k++){sx=CLOUDS[k][0]-camI*0.3;if(sx<-110||sx>VIEW_W+10)continue;ctx.drawImage(cloudCv,sx|0,CLOUDS[k][1]);}
 for(k=0;k<HILLS.length;k++){sx=HILLS[k][0]-camI*0.55;const hr=HILLS[k][1];if(sx<-hr-40||sx>VIEW_W+hr+40)continue;ctx.drawImage(hillCvs[k&1],(sx-hr)|0,440-hr,hr*2,hr);}
-const c0=Math.max(0,Math.floor(camI/TILE)),c1=Math.min(COLS-1,c0+17);let rw;
-for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isSolid,rw*TILE,TILE,'#b07a4e');
+const c0=Math.max(0,Math.floor(camI/TILE)),c1=Math.min(stage.cols-1,c0+17);let rw;
+for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isSolid,rw*TILE,TILE,stage.theme.dirt);
 for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isSolid,rw*TILE+TILE-6,6,'rgba(0,0,0,0.08)');
-for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isTop,rw*TILE,12,'#79c94f');
-for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isTop,rw*TILE,5,'#93dd66');
+for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isTop,rw*TILE,12,stage.theme.grass);
+for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isTop,rw*TILE,5,stage.theme.grassLight);
 for(const g of GIMMICKS)g.draw(camI);
-for(k=0;k<CHECKPOINTS.length;k++){const kx=CHECKPOINTS[k]-camI;
+for(k=0;k<stage.checkpoints.length;k++){const kx=stage.checkpoints[k]-camI;
 if(kx>-40&&kx<VIEW_W+40){ctx.fillStyle='#8a6b4a';ctx.fillRect(kx,376,5,64);ctx.fillStyle=S.checkpointIndex>=k?'#f0a03c':'#cbbfae';ctx.beginPath();ctx.arc(kx+2.5,366,13,0,TAU);ctx.fill();ctx.fillStyle='#5c452c';ctx.beginPath();ctx.arc(kx+2.5,369,4,0,TAU);ctx.arc(kx-3.5,362,2.2,0,TAU);ctx.arc(kx+2.5,360,2.2,0,TAU);ctx.arc(kx+8.5,362,2.2,0,TAU);ctx.fill();}}
-const hx=GOAL_X-camI;
+const hx=stage.goalX-camI;
 if(hx>-180&&hx<VIEW_W+40){
 ctx.fillStyle='#9a8f7f';ctx.fillRect(hx-26,296,5,144);
 ctx.fillStyle='#ffd23e';triangle(hx-21,298,hx+26,313,hx-21,328);

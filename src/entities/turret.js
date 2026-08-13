@@ -1,6 +1,6 @@
 // 砲台ネコ。近づくと弾を撃つ。体力3で、踏むかショットで削る。
 import {TAU,TILE,VIEW_W} from '../config.js';
-import {TURRET_SPOTS} from '../level.js';
+import {stage} from '../stage.js';
 import {S} from '../state.js';
 import {ctx} from '../canvas.js';
 import {roundRect,triangle} from '../draw.js';
@@ -14,7 +14,7 @@ function destroy(tu){tu.deadTimer=1;spawnRing(tu.x+15,tu.y+13);killEnemy(tu,KILL
 export default {
   key: 'turret',
   group: 'turrets',
-  spawnAll(){return TURRET_SPOTS.map((col)=>({x:col*TILE+5,y:11*TILE-26,w:30,h:26,hp:3,cooldown:80,facing:-1,deadTimer:0,hitFlash:0}));},
+  spawnAll(){return (stage.spawns.turret??[]).map((col)=>({x:col*TILE+5,y:11*TILE-26,w:30,h:26,hp:3,cooldown:80,facing:-1,deadTimer:0,hitFlash:0}));},
 
   update(){const list=S.turrets;
 for(let i=list.length-1;i>=0;i--){const tu=list[i];

@@ -1,6 +1,6 @@
 // 飛ぶカラス。決められた区間を往復しながら上下に揺れる。踏むと大きく跳ねる。
 import {TAU,TILE,VIEW_W,VIEW_H} from '../config.js';
-import {CROW_SPOTS} from '../level.js';
+import {stage} from '../stage.js';
 import {S} from '../state.js';
 import {ctx} from '../canvas.js';
 import {triangle} from '../draw.js';
@@ -10,7 +10,7 @@ export default {
   key: 'crow',
   group: 'crows',
   // 配置データは [左端の列, 右端の列, 基準の高さ, 速度]
-  spawnAll(){return CROW_SPOTS.map((a)=>({x:a[0]*TILE,minX:a[0]*TILE,maxX:a[1]*TILE,baseY:a[2],y:a[2],w:30,h:22,facing:1,speed:a[3],deadTimer:0,vy:0,phase:a[0]}));},
+  spawnAll(){return (stage.spawns.crow??[]).map((a)=>({x:a[0]*TILE,minX:a[0]*TILE,maxX:a[1]*TILE,baseY:a[2],y:a[2],w:30,h:22,facing:1,speed:a[3],deadTimer:0,vy:0,phase:a[0]}));},
 
   update(){const list=S.crows;
 for(let i=list.length-1;i>=0;i--){const cr=list[i];

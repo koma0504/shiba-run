@@ -1,7 +1,7 @@
 // バネ。踏むと大きく打ち上げる。
 // 判定はプレイヤーのY移動後・地形解決の前に行う（先に地面へ吸着されると踏めなくなるため）
 import {VIEW_W,TILE} from '../config.js';
-import {SPRING_SPOTS} from '../level.js';
+import {stage} from '../stage.js';
 import {S} from '../state.js';
 import {ctx} from '../canvas.js';
 import {makeCanvas,roundRectOn} from '../draw.js';
@@ -13,7 +13,7 @@ const springCv=makeCanvas(36,32);(function(){const c=springCv.getContext('2d');c
 export default {
   key: 'spring',
   group: 'springs',
-  spawnAll(){return SPRING_SPOTS.map((col)=>({x:col*TILE+6,y:10*TILE+16,w:28,h:24,squash:0}));},
+  spawnAll(){return (stage.spawns.spring??[]).map((col)=>({x:col*TILE+6,y:10*TILE+16,w:28,h:24,squash:0}));},
 
   beforeTileY(){const list=S.springs;
 for(let i=0;i<list.length;i++){const s=list[i];if(s.squash>0)s.squash--;

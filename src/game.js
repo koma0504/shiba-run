@@ -1,5 +1,5 @@
-import {TILE,VIEW_W,VIEW_H,WORLD_W,HP_MAX} from './config.js';
-import {CHECKPOINTS,GOAL_X,ARENA_LEFT,ARENA_RIGHT,isSolid} from './level.js';
+import {TILE,VIEW_W,VIEW_H,HP_MAX} from './config.js';
+import {stage,isSolid} from './stage.js';
 import {S} from './state.js';
 import {sfx} from './audio.js';
 import {spawnParticles,spawnRing,popText} from './fx.js';
@@ -40,7 +40,7 @@ if(!input.jump&&S.player.vy<-4.5)S.player.vy=-4.5;
 S.player.vy=Math.min(S.player.vy+0.55,15);
 S.player.x+=S.player.vx;
 // ボス戦中はアリーナの外へ出られない
-const lx=S.bossStarted&&!S.bossDead?ARENA_LEFT+4:0,rx=S.bossStarted&&!S.bossDead?ARENA_RIGHT-S.player.w-4:WORLD_W-S.player.w;
+const lx=S.bossStarted&&!S.bossDead?stage.arenaLeft+4:0,rx=S.bossStarted&&!S.bossDead?stage.arenaRight-S.player.w-4:stage.worldW-S.player.w;
 if(S.player.x<lx){S.player.x=lx;S.player.vx=0;}if(S.player.x>rx){S.player.x=rx;S.player.vx=0;}
 resolveTiles(S.player,'x');
 const wasOn=S.player.onGround,fallV=S.player.vy;
@@ -66,7 +66,7 @@ if(Math.abs(pcx-b.x)<24&&Math.abs(pcy-b.y)<26){b.taken=true;S.boneCount++;S.scor
 if(S.boneCount%20===0&&S.lives<5){S.lives++;popText(b.x,b.y-16,'1UP','#3b6d11');sfx('chk');}}}
 for(let i=0;i<S.meats.length;i++){const mt=S.meats[i];
 if(!mt.taken&&Math.abs(pcx-mt.x)<26&&Math.abs(pcy-mt.y)<28){mt.taken=true;S.powerTimer=480;S.hp=HP_MAX;S.score+=200;popText(mt.x,mt.y-14,'パワーアップ','#b8770f');spawnParticles(mt.x,mt.y,12,'#ffd23e',2.6,0.05,30,3);sfx('power');}}
-for(let i=S.checkpointIndex+1;i<CHECKPOINTS.length;i++){if(S.player.x>CHECKPOINTS[i]){S.checkpointIndex=i;S.hp=HP_MAX;popText(CHECKPOINTS[i],356,'中間地点','#3b6d11');sfx('chk');}}}
+for(let i=S.checkpointIndex+1;i<stage.checkpoints.length;i++){if(S.player.x>stage.checkpoints[i]){S.checkpointIndex=i;S.hp=HP_MAX;popText(stage.checkpoints[i],356,'中間地点','#3b6d11');sfx('chk');}}}
 
 // プレイヤーのショット
 function stepShots(){
@@ -81,7 +81,7 @@ if(hit||sh.x<S.cameraX-60||sh.x>S.cameraX+VIEW_W+60)S.shots.splice(i,1);}}
 
 // ボス「ニャン大将」。3つの攻撃パターンを待機を挟んで繰り返す
 function stepBoss(){const pcx=S.playerCenterX,pcy=S.playerCenterY;
-if(!S.bossStarted&&!S.bossDead&&S.player.x>243*TILE){S.bossStarted=true;S.boss.mode='intro';S.boss.timer=0;S.boss.x=250*TILE;S.boss.y=-100;popText(250*TILE+35,240,'ニャン大将','#5a4632');}
+if(!S.bossStarted&&!S.bossDead&&S.player.x>stage.boss.triggerX){S.bossStarted=true;S.boss.mode='intro';S.boss.timer=0;S.boss.x=stage.boss.spawnX;S.boss.y=-100;popText(stage.boss.spawnX+35,240,stage.boss.name,'#5a4632');}
 if(!S.bossStarted||S.bossDead)return;
 const bs=S.boss;if(bs.invincible>0)bs.invincible--;
 bs.facing=pcx<bs.x+bs.w/2?-1:1;
@@ -92,7 +92,7 @@ if(bs.onGround&&bs.timer>70){bs.mode='idle';bs.timer=45;}
 return;}
 if(bs.mode==='die'){bs.deathTimer++;
 if(bs.deathTimer%8===0){spawnRing(bs.x+bs.w/2+(Math.random()-0.5)*50,bs.y+bs.h/2+(Math.random()-0.5)*40);sfx('boom');}
-if(bs.deathTimer>72){S.bossDead=true;S.score+=1000;popText(bs.x+35,bs.y,'+1000','#a86b1e');popText(GOAL_X+58,300,'扉が開いた','#3b6d11');spawnRing(bs.x+35,bs.y+28);sfx('clear');}
+if(bs.deathTimer>72){S.bossDead=true;S.score+=1000;popText(bs.x+35,bs.y,'+1000','#a86b1e');popText(stage.goalX+58,300,'扉が開いた','#3b6d11');spawnRing(bs.x+35,bs.y+28);sfx('clear');}
 return;}
 if(bs.mode==='idle'){bs.vx*=0.8;bs.timer--;
 if(bs.timer<=0){const dd=Math.abs(pcx-bs.x),rn=Math.random();
@@ -106,7 +106,7 @@ for(let j=-1;j<=1;j++){S.enemyBullets.push({x:mx2,y:my2,vx:Math.cos(ang+j*0.22)*
 if(bs.timer<=0){bs.mode='idle';bs.timer=40;}}
 const wasOn=bs.onGround;
 bs.vy=Math.min(bs.vy+0.55,15);
-bs.x+=bs.vx;if(bs.x<ARENA_LEFT+4){bs.x=ARENA_LEFT+4;bs.vx=bs.vx<0?-bs.vx:bs.vx;}if(bs.x>ARENA_RIGHT-bs.w-4){bs.x=ARENA_RIGHT-bs.w-4;bs.vx=bs.vx>0?-bs.vx:bs.vx;}
+bs.x+=bs.vx;if(bs.x<stage.arenaLeft+4){bs.x=stage.arenaLeft+4;bs.vx=bs.vx<0?-bs.vx:bs.vx;}if(bs.x>stage.arenaRight-bs.w-4){bs.x=stage.arenaRight-bs.w-4;bs.vx=bs.vx>0?-bs.vx:bs.vx;}
 resolveTiles(bs,'x');bs.onGround=false;bs.y+=bs.vy;resolveTiles(bs,'y');
 if(bs.onGround&&!wasOn){
 // 着地の衝撃で左右に弾をまき散らす
@@ -127,4 +127,4 @@ stepShots();
 for(const def of UPDATE_ORDER)def.update();
 stepBoss();
 if(S.player.y>VIEW_H+60)loseLife();
-if(S.state==='play'&&S.bossDead&&S.player.x+S.player.w>GOAL_X+8)clearGame();}
+if(S.state==='play'&&S.bossDead&&S.player.x+S.player.w>stage.goalX+8)clearGame();}

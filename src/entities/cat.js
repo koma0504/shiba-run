@@ -1,6 +1,6 @@
 // 歩きネコ。地面の端で折り返す。踏める。
 import {TAU,TILE,VIEW_W} from '../config.js';
-import {isSolid,CAT_SPOTS} from '../level.js';
+import {isSolid,stage} from '../stage.js';
 import {S} from '../state.js';
 import {ctx} from '../canvas.js';
 import {roundRect,triangle} from '../draw.js';
@@ -9,7 +9,7 @@ import {rectsOverlap,killEnemy,touchEnemy} from '../combat.js';
 export default {
   key: 'cat',
   group: 'cats',
-  spawnAll(){return CAT_SPOTS.map((col)=>({x:col*TILE+3,y:11*TILE-26,w:34,h:26,facing:-1,deadTimer:0}));},
+  spawnAll(){return (stage.spawns.cat??[]).map((col)=>({x:col*TILE+3,y:11*TILE-26,w:34,h:26,facing:-1,deadTimer:0}));},
 
   update(){const list=S.cats;
 for(let i=list.length-1;i>=0;i--){const ct=list[i];

@@ -3,12 +3,16 @@ import {S} from './state.js';
 import {resetAll} from './reset.js';
 import {updateFx} from './fx.js';
 import {bindInput} from './input.js';
-import {overlayBtn,startGame} from './ui.js';
+import {overlayBtn,startGame,consumeNextStage} from './ui.js';
 import {tryFire,step} from './game.js';
 import {render} from './render.js';
 
 bindInput({fire:tryFire,startGame:startGame});
-overlayBtn.addEventListener('click',function(){initAudio();if(S.state==='title'){startGame();}else{resetAll();startGame();}});
+overlayBtn.addEventListener('click',function(){initAudio();
+if(S.state==='title'){startGame();return;}
+// クリア後で次の面があるなら進む。それ以外（ゲームオーバー・全面クリア）は1面から
+if(consumeNextStage())S.stageIndex++;else S.stageIndex=0;
+resetAll();startGame();});
 let last=0,accum=0;
 function loop(ts){requestAnimationFrame(loop);if(!last)last=ts;let dt=ts-last;last=ts;if(dt>100)dt=100;accum+=dt;
 let steps=0;

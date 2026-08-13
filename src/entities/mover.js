@@ -1,7 +1,7 @@
 // 移動床。往復運動し、乗ったプレイヤーを一緒に運ぶ。
 // 位置更新はstepの冒頭、乗せ判定は地形解決のあと（地面より優先して足場になる）
 import {TAU,VIEW_W} from '../config.js';
-import {MOVER_SPOTS} from '../level.js';
+import {stage} from '../stage.js';
 import {S} from '../state.js';
 import {ctx} from '../canvas.js';
 import {roundRect} from '../draw.js';
@@ -9,7 +9,7 @@ import {roundRect} from '../draw.js';
 export default {
   key: 'mover',
   group: 'movers',
-  spawnAll(){return MOVER_SPOTS.map((d)=>({axis:d.axis,from:d.from,to:d.to,x:d.x,y:d.y,w:d.w,h:d.h,period:d.period,phase:d.phase,dx:0,dy:0}));},
+  spawnAll(){return (stage.spawns.mover??[]).map((d)=>({axis:d.axis,from:d.from,to:d.to,x:d.x,y:d.y,w:d.w,h:d.h,period:d.period,phase:d.phase,dx:0,dy:0}));},
 
   advance(){const list=S.movers;
 for(let i=0;i<list.length;i++){const m=list[i];

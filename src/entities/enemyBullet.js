@@ -1,6 +1,6 @@
 // 敵の弾。砲台ネコとボスが撃つ。配置データからは生まれず、実行中にだけ増える。
 import {VIEW_W,VIEW_H,TILE} from '../config.js';
-import {isSolid} from '../level.js';
+import {isSolid} from '../stage.js';
 import {S} from '../state.js';
 import {ctx} from '../canvas.js';
 import {makeCanvas} from '../draw.js';
@@ -16,7 +16,11 @@ export default {
   spawnAll(){return [];},
 
   update(){const list=S.enemyBullets;
-for(let i=list.length-1;i>=0;i--){const eb=list[i];eb.x+=eb.vx;eb.y+=eb.vy;
+for(let i=list.length-1;i>=0;i--){const eb=list[i];
+// 被弾で残機を失うと loseLife が弾を全消しする。
+// 後ろから走査しているので、その先の添字は空になっている。ここで打ち切る
+if(!eb)break;
+eb.x+=eb.vx;eb.y+=eb.vy;
 const ec=Math.floor(eb.x/TILE),er=Math.floor(eb.y/TILE);
 if(isSolid(ec,er)){spawnParticles(eb.x,eb.y,3,'#f0a03c',1.2,0,10,2);list.splice(i,1);continue;}
 if(eb.x<S.cameraX-80||eb.x>S.cameraX+VIEW_W+80||eb.y>VIEW_H+40){list.splice(i,1);continue;}

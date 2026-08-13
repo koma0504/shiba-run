@@ -10,9 +10,10 @@
 //   EXPECT=<digest> node tools/replay-check.mjs  … 不一致なら終了コード1（CI用）
 //
 // シナリオ:
-//   run  … スタート地点から右へ走る。道中の地形・敵・アイテムを広く通る
-//   boss … ボスアリーナ手前へ瞬間移動してボス戦を検証する。
-//          runシナリオはボスまで届かないため、これがないとボス戦は無検証になる
+//   run    … 1面のスタート地点から右へ走る。道中の地形・敵・アイテムを広く通る
+//   boss   … 1面のボスアリーナ手前へ瞬間移動してボス戦を検証する。
+//            runシナリオはボスまで届かないため、これがないとボス戦は無検証になる
+//   stage2 … 2面を頭から走る。面を増やしたらここに1つ足すこと
 //
 // index.html のscriptがインライン／module srcのどちらでも動く。
 import { readFile, writeFile } from 'node:fs/promises';
@@ -23,6 +24,7 @@ import { join } from 'node:path';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SCENARIO = process.env.SCENARIO || 'run';
 const FRAMES = Number(process.env.FRAMES || (SCENARIO === 'boss' ? 1800 : 3600));
+const SCENARIOS = ['run', 'boss', 'stage2'];
 const SEED = Number(process.env.SEED || 12345);
 const DUMP = process.env.DUMP || '';
 const EXPECT = (process.env.EXPECT || '').trim();
@@ -194,30 +196,42 @@ if (moduleSrc) {
   new Function(inline[1])();
 }
 
-// bossシナリオでは、ゲーム開始直後にプレイヤーをボスアリーナ手前へ移動させる。
-// 中間地点も最後のものに合わせ、被弾死してもアリーナ付近から再開するようにする
-let teleportToBoss = null;
-if (SCENARIO === 'boss') {
+// 開始12フレーム目に一度だけ実行する仕込み。シナリオごとに違う
+let setup = null;
+if (SCENARIO !== 'run') {
   if (!moduleSrc) {
-    console.error('bossシナリオはモジュール版のみ対応しています');
+    console.error(`${SCENARIO}シナリオはモジュール版のみ対応しています`);
     process.exit(1);
   }
   const { S } = await import(pathToFileURL(join(ROOT, 'src/state.js')).href);
   const { TILE } = await import(pathToFileURL(join(ROOT, 'src/config.js')).href);
-  teleportToBoss = () => {
-    S.checkpointIndex = 3;
-    S.player.x = 240 * TILE;
-    S.player.y = 11 * TILE - 30;
-    S.player.vx = 0;
-    S.player.vy = 0;
-  };
+  if (SCENARIO === 'boss') {
+    // 中間地点も最後のものに合わせ、被弾死してもアリーナ付近から再開させる
+    setup = () => {
+      S.checkpointIndex = 3;
+      S.player.x = 240 * TILE;
+      S.player.y = 11 * TILE - 30;
+      S.player.vx = 0;
+      S.player.vy = 0;
+    };
+  } else if (SCENARIO === 'stage2') {
+    const { resetAll } = await import(pathToFileURL(join(ROOT, 'src/reset.js')).href);
+    setup = () => {
+      S.stageIndex = 1;
+      resetAll();
+      S.state = 'play';
+    };
+  } else {
+    console.error(`未知のシナリオです: ${SCENARIO}`);
+    process.exit(1);
+  }
 }
 
 let previous = {};
 let timestamp = 0;
 let ranFrames = 0;
 for (let f = 0; f < FRAMES; f++) {
-  if (f === 12 && teleportToBoss) teleportToBoss();
+  if (f === 12 && setup) setup();
   const current = inputsAt(f);
   for (const code of KEYS) {
     if (current[code] && !previous[code]) fireKey('keydown', code);
