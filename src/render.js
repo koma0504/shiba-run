@@ -1,6 +1,6 @@
 import {TAU,VIEW_W,VIEW_H,TILE,ROWS,HP_MAX} from './config.js';
 import {ctx} from './canvas.js';
-import {stage,isSolid} from './stage.js';
+import {stage} from './stage.js';
 import {S} from './state.js';
 import {input} from './input.js';
 import {makeCanvas,roundRectOn,roundRect,triangleOn,triangle} from './draw.js';
@@ -70,12 +70,13 @@ function drawMeterBar(x,y,val,mx2,segH,col){ctx.fillStyle='rgba(20,26,34,0.55)';
 ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fillRect(x,y,10,mx2*segH-2);
 ctx.fillStyle=col;
 for(let k=0;k<val;k++)ctx.fillRect(x,y+(mx2-1-k)*segH,10,segH-2);}
-// 同じ行の連続するタイルを1回のfillRectでまとめて塗る
-function runRow(camI,c0,c1,rw,cond,y,h,col){ctx.fillStyle=col;let st=-1;
-for(let cc=c0;cc<=c1+1;cc++){const ok=cc<=c1&&cond(cc,rw);
-if(ok&&st<0)st=cc;
-else if(!ok&&st>=0){ctx.fillRect(st*TILE-camI,y,(cc-st)*TILE,h);st=-1;}}}
-function isTop(cc,rw){return isSolid(cc,rw)&&!isSolid(cc,rw-1);}
+// 同じ行の連続するタイルを1回のfillRectでまとめて塗る。
+// 区間そのものは stage.js が面の読み込み時に作ってあるので、ここは可視範囲へ切るだけ
+function fillRuns(runs,camI,c0,c1,y,h,col){ctx.fillStyle=col;
+for(let n=0;n<runs.length;n+=2){const a=runs[n],b=runs[n+1];
+if(b<c0)continue;if(a>c1)break;
+const s=a<c0?c0:a,e=b>c1?c1:b;
+ctx.fillRect(s*TILE-camI,y,(e+1-s)*TILE,h);}}
 export function render(){let tgt;
 if(S.bossStarted&&!S.bossDead)tgt=stage.arenaLeft;else tgt=Math.min(Math.max(S.player.x-VIEW_W*0.4,0),stage.worldW-VIEW_W);
 S.cameraX+=(tgt-S.cameraX)*0.15;if(Math.abs(tgt-S.cameraX)<0.5)S.cameraX=tgt;
@@ -87,10 +88,10 @@ ctx.drawImage(fujiCv,fxp,188);
 for(k=0;k<CLOUDS.length;k++){sx=CLOUDS[k][0]-camI*0.3;if(sx<-110||sx>VIEW_W+10)continue;ctx.drawImage(cloudCv,sx|0,CLOUDS[k][1]);}
 for(k=0;k<HILLS.length;k++){sx=HILLS[k][0]-camI*0.55;const hr=HILLS[k][1];if(sx<-hr-40||sx>VIEW_W+hr+40)continue;ctx.drawImage(hillCvs[k&1],(sx-hr)|0,440-hr,hr*2,hr);}
 const c0=Math.max(0,Math.floor(camI/TILE)),c1=Math.min(stage.cols-1,c0+17);let rw;
-for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isSolid,rw*TILE,TILE,stage.theme.dirt);
-for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isSolid,rw*TILE+TILE-6,6,'rgba(0,0,0,0.08)');
-for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isTop,rw*TILE,12,stage.theme.grass);
-for(rw=0;rw<ROWS;rw++)runRow(camI,c0,c1,rw,isTop,rw*TILE,5,stage.theme.grassLight);
+for(rw=0;rw<ROWS;rw++)fillRuns(stage.solidRuns[rw],camI,c0,c1,rw*TILE,TILE,stage.theme.dirt);
+for(rw=0;rw<ROWS;rw++)fillRuns(stage.solidRuns[rw],camI,c0,c1,rw*TILE+TILE-6,6,'rgba(0,0,0,0.08)');
+for(rw=0;rw<ROWS;rw++)fillRuns(stage.topRuns[rw],camI,c0,c1,rw*TILE,12,stage.theme.grass);
+for(rw=0;rw<ROWS;rw++)fillRuns(stage.topRuns[rw],camI,c0,c1,rw*TILE,5,stage.theme.grassLight);
 for(const g of GIMMICKS)g.draw(camI);
 for(k=0;k<stage.checkpoints.length;k++){const kx=stage.checkpoints[k]-camI;
 if(kx>-40&&kx<VIEW_W+40){ctx.fillStyle='#8a6b4a';ctx.fillRect(kx,376,5,64);ctx.fillStyle=S.checkpointIndex>=k?'#f0a03c':'#cbbfae';ctx.beginPath();ctx.arc(kx+2.5,366,13,0,TAU);ctx.fill();ctx.fillStyle='#5c452c';ctx.beginPath();ctx.arc(kx+2.5,369,4,0,TAU);ctx.arc(kx-3.5,362,2.2,0,TAU);ctx.arc(kx+2.5,360,2.2,0,TAU);ctx.arc(kx+8.5,362,2.2,0,TAU);ctx.fill();}}
