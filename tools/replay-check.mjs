@@ -227,10 +227,15 @@ if (SCENARIO !== 'run') {
   }
 }
 
+// 何フレーム目で食い違ったかを突き止めるための区間ハッシュ。
+// 環境差やリグレッションの切り分けに使う
+const CHUNK = 300;
+const chunkMarks = [];
 let previous = {};
 let timestamp = 0;
 let ranFrames = 0;
 for (let f = 0; f < FRAMES; f++) {
+  if (f > 0 && f % CHUNK === 0) chunkMarks.push([f, mainCanvas.log.length]);
   if (f === 12 && setup) setup();
   const current = inputsAt(f);
   for (const code of KEYS) {
@@ -254,6 +259,13 @@ const mainHash = sha(mainCanvas.log.join('\n')).slice(0, 12);
 const digest = sha(mainHash + '|' + offscreen.join(',')).slice(0, 16);
 
 if (DUMP) await writeFile(DUMP, mainCanvas.log.join('\n') + '\n');
+if (process.env.VERBOSE) {
+  console.log(`main=${mainHash}`);
+  console.log(`offscreen=${offscreen.join(',')}`);
+  for (const [frame, upto] of chunkMarks) {
+    console.log(`  frame${frame}: ${sha(mainCanvas.log.slice(0, upto).join('\n')).slice(0, 12)}`);
+  }
+}
 console.log(`scenario=${SCENARIO} mode=${mode} frames=${ranFrames} seed=${SEED} ops=${mainCanvas.log.length} offscreen=${offscreen.length}`);
 console.log(`digest=${digest}`);
 

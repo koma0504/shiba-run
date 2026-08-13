@@ -26,7 +26,7 @@ jobs:
               echo "tools/replay-baseline.txt に ${scenario} の基準値がありません" >&2
               exit 1
             fi
-            EXPECT="$expected" SCENARIO="$scenario" node tools/replay-check.mjs
+            EXPECT="$expected" SCENARIO="$scenario" VERBOSE=1 node tools/replay-check.mjs
           done
 
       - name: 外部リソース参照がないことの確認
