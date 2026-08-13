@@ -60,10 +60,14 @@ ctx.fillStyle=col;
 for(let k=0;k<val;k++)ctx.fillRect(x,y+(mx2-1-k)*segH,10,segH-2);}
 // 同じ行の連続するタイルを1回のfillRectでまとめて塗る。
 // 区間そのものは stage.js が面の読み込み時に作ってあるので、ここは可視範囲へ切るだけ
-function fillRuns(runs,camI,c0,c1,y,h,col){ctx.fillStyle=col;
+// 色は実際に塗るものがあると分かってから設定する。行の大半は画面の外にあり、
+// 先頭で無条件に設定すると「色を変えて1つも塗らない」が毎フレーム約40回出ていた
+// （地形の4パス×12行で48回設定に対し、実際のfillRectは約9回）
+function fillRuns(runs,camI,c0,c1,y,h,col){let ready=false;
 for(let n=0;n<runs.length;n+=2){const a=runs[n],b=runs[n+1];
 if(b<c0)continue;if(a>c1)break;
 const s=a<c0?c0:a,e=b>c1?c1:b;
+if(!ready){ctx.fillStyle=col;ready=true;}
 ctx.fillRect(s*TILE-camI,y,(e+1-s)*TILE,h);}}
 // カメラの追従。main.js が固定の刻みで呼ぶ。
 // 以前は render() の先頭にあったが、それだと表示のリフレッシュレートで走るため、
