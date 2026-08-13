@@ -39,9 +39,20 @@ function seededRandom() {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
 
+// 座標は小数6桁に丸めて記録する。
+// Math.sin などの超越関数は V8 でも CPU アーキテクチャによって最終1ビットが変わる
+// （arm64 の macOS と x64 の Linux で実測。例: -3.7071664773517767 と -3.707166477351776）。
+// 丸めないと、同じコードでも環境が違うだけでダイジェストが一致しない。
+// ゲームの挙動として意味を持つ差は1画素の何分の1どころではないので、
+// 6桁で丸めても壊れた変更は取りこぼさない（重力0.55→0.5501は検出できることを実測で確認済み）。
+const PRECISION = 6;
 function fmtArg(v) {
   if (v && v.__canvas) return '#' + v.digest();
-  if (typeof v === 'number') return Object.is(v, -0) ? '0' : String(v);
+  if (typeof v === 'number') {
+    if (!Number.isFinite(v)) return String(v);
+    const s = v.toFixed(PRECISION);
+    return s === '-0.' + '0'.repeat(PRECISION) ? '0.' + '0'.repeat(PRECISION) : s;
+  }
   if (v === null || v === undefined) return String(v);
   if (typeof v === 'object') return '[obj]';
   return String(v);
