@@ -4,6 +4,7 @@ import {S} from './state.js';
 import {sfx} from './audio.js';
 import {confetti} from './fx.js';
 import {save,setMuted} from './save.js';
+import {clearInputEdges} from './input.js';
 
 export const overlay=document.getElementById('ov'),overlayTitle=document.getElementById('ovT'),overlayDesc=document.getElementById('ovD'),overlayBtn=document.getElementById('ovB');
 
@@ -12,6 +13,15 @@ function syncMuteLabel(){muteBtn.textContent=save.muted?'🔇 消音中':'🔊 �
 muteBtn.addEventListener('click',function(){setMuted(!save.muted);syncMuteLabel();});
 syncMuteLabel();
 export function startGame(){S.state='play';overlay.style.display='none';sfx('start');}
+
+// ポーズ。S.state に値を1つ足すだけで、既にある8箇所の `S.state==='play'` ガードが
+// そのまま「ポーズ中は判定しない」になる。別フラグにすると8箇所すべてに条件を足すことになり、
+// 敵を増やすたびに足し忘れが出る
+export function togglePause(){if(S.state==='play'){S.state='pause';showOverlay('ポーズ','Esc または P で再開','再開する');}
+else if(S.state==='pause')resumeGame();}
+export function resumeGame(){if(S.state!=='pause')return;S.state='play';overlay.style.display='none';
+// ポーズ中に押されたジャンプが再開の1フレーム目に暴発しないよう、入力のエッジを消す
+clearInputEdges();}
 function showOverlay(t,d,b){overlayTitle.textContent=t;overlayDesc.innerHTML=d;overlayBtn.textContent=b;overlay.style.display='flex';}
 function formatTime(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
 export function gameOver(){S.state='over';showOverlay('ゲームオーバー','スコア：'+S.score+' ／ 骨：'+S.boneCount+' 本','もう一度');}

@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir -p /tmp/dumps
           rc=0
-          for scenario in run boss stage2; do
+          for scenario in run boss stage2 pause; do
             expected=$(grep "^${scenario}=" tools/replay-baseline.txt | cut -d= -f2)
             if [ -z "$expected" ]; then
               echo "tools/replay-baseline.txt に ${scenario} の基準値がありません" >&2
