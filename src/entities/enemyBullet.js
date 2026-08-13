@@ -12,7 +12,6 @@ const bulletCv=makeCanvas(10,10);(function(){const c=bulletCv.getContext('2d');c
 export default {
   key: 'enemyBullet',
   group: 'enemyBullets',
-  runtimeOnly: true,
   spawnAll(){return [];},
 
   update(){const list=S.enemyBullets;

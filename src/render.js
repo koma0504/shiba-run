@@ -1,4 +1,4 @@
-import {TAU,VIEW_W,VIEW_H,TILE,ROWS,HP_MAX} from './config.js';
+import {TAU,VIEW_W,VIEW_H,TILE,ROWS,HP_MAX,LIVES_MAX} from './config.js';
 import {ctx} from './canvas.js';
 import {stage} from './stage.js';
 import {S} from './state.js';
@@ -7,7 +7,6 @@ import {makeCanvas,roundRectOn,roundRect,triangleOn,triangle} from './draw.js';
 import {DRAW_ORDER,GIMMICKS} from './entities/index.js';
 import enemyBullet from './entities/enemyBullet.js';
 
-let i;
 // 背景や小物は毎フレーム描き直さず、起動時に一度だけ別canvasへ描いて使い回す
 let bgCv,fujiCv,hillCvs;
 // 空・山・丘はテーマで色が変わるので、面を読み込むたびに描き直す
@@ -64,8 +63,8 @@ ctx.strokeStyle=D;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(5.5,-28);ctx.line
 ctx.fillStyle='#d98a8a';ctx.beginPath();ctx.arc(17.5,-22,1.6,0,TAU);ctx.fill();
 ctx.restore();}
 const CLOUDS=[],HILLS=[];
-for(i=0;i<14;i++)CLOUDS.push([60+i*270,55+((i*53)%100)]);
-for(i=0;i<18;i++)HILLS.push([80+i*350,130+((i*97)%90)]);
+for(let i=0;i<14;i++)CLOUDS.push([60+i*270,55+((i*53)%100)]);
+for(let i=0;i<18;i++)HILLS.push([80+i*350,130+((i*97)%90)]);
 function drawMeterBar(x,y,val,mx2,segH,col){ctx.fillStyle='rgba(20,26,34,0.55)';roundRect(x-2,y-2,14,mx2*segH+4,4);ctx.fill();
 ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fillRect(x,y,10,mx2*segH-2);
 ctx.fillStyle=col;
@@ -134,4 +133,4 @@ drawMeterBar(10,46,S.hp,HP_MAX,9,S.hp<=2&&((S.time>>3)&1)===0?'#e2554a':'#79c94f
 if(S.bossStarted&&!S.bossDead){const shown=S.boss.mode==='intro'?Math.floor(S.boss.hp*Math.min(1,S.boss.timer/60)):S.boss.hp;
 drawMeterBar(30,46,shown,S.boss.hpMax,5,'#f0a03c');}
 ctx.fillStyle='rgba(255,255,255,0.82)';roundRect(VIEW_W-142,8,134,30,15);ctx.fill();
-for(k=0;k<5;k++)ctx.drawImage(heartCvs[k<S.lives?0:1],VIEW_W-129+k*24,14);}
+for(k=0;k<LIVES_MAX;k++)ctx.drawImage(heartCvs[k<S.lives?0:1],VIEW_W-129+k*24,14);}

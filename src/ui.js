@@ -6,7 +6,8 @@ import {confetti} from './fx.js';
 import {save,setMuted,bestOf,isCleared,recordClear} from './save.js';
 import {clearInputEdges} from './input.js';
 
-export const overlay=document.getElementById('ov'),overlayTitle=document.getElementById('ovT'),overlayDesc=document.getElementById('ovD'),overlayBtn=document.getElementById('ovB');
+const overlay=document.getElementById('ov'),overlayTitle=document.getElementById('ovT'),overlayDesc=document.getElementById('ovD');
+export const overlayBtn=document.getElementById('ovB');
 const stageList=document.getElementById('ovS');
 
 // 面のやり直しには reset.js が要るが、ここから import すると

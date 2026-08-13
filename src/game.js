@@ -1,4 +1,4 @@
-import {TILE,VIEW_W,VIEW_H,HP_MAX} from './config.js';
+import {TILE,VIEW_W,VIEW_H,HP_MAX,LIVES_MAX} from './config.js';
 import {stage,isSolid} from './stage.js';
 import {S} from './state.js';
 import {sfx} from './audio.js';
@@ -63,7 +63,7 @@ function stepPickups(){const pcx=S.playerCenterX,pcy=S.playerCenterY;
 for(let i=0;i<S.bones.length;i++){const b=S.bones[i];if(b.taken)continue;
 if(b.x<pcx-40||b.x>pcx+40)continue;
 if(Math.abs(pcx-b.x)<24&&Math.abs(pcy-b.y)<26){b.taken=true;S.boneCount++;S.score+=50;spawnParticles(b.x,b.y,5,'#fff3c2',1.8,0.03,20,2.2);sfx('bone');
-if(S.boneCount%20===0&&S.lives<5){S.lives++;popText(b.x,b.y-16,'1UP','#3b6d11');sfx('chk');}}}
+if(S.boneCount%20===0&&S.lives<LIVES_MAX){S.lives++;popText(b.x,b.y-16,'1UP','#3b6d11');sfx('chk');}}}
 for(let i=0;i<S.meats.length;i++){const mt=S.meats[i];
 if(!mt.taken&&Math.abs(pcx-mt.x)<26&&Math.abs(pcy-mt.y)<28){mt.taken=true;S.powerTimer=480;S.hp=HP_MAX;S.score+=200;popText(mt.x,mt.y-14,'パワーアップ','#b8770f');spawnParticles(mt.x,mt.y,12,'#ffd23e',2.6,0.05,30,3);sfx('power');}}
 for(let i=S.checkpointIndex+1;i<stage.checkpoints.length;i++){if(S.player.x>stage.checkpoints[i]){S.checkpointIndex=i;S.hp=HP_MAX;popText(stage.checkpoints[i],356,'中間地点','#3b6d11');sfx('chk');}}}

@@ -18,7 +18,7 @@ import enemyBullet from './enemyBullet.js';
 import spring from './spring.js';
 import mover from './mover.js';
 
-// 初期化で配列を作る対象。runtimeOnlyのものは空配列になる
+// 初期化で配列を作る対象。敵の弾のように配置データを持たないものは spawnAll() が空を返す
 export const ENTITIES = [cat, crow, turret, enemyBullet, spring, mover];
 
 // 更新順。砲台が撃った弾を同じフレームのうちに動かすため、砲台→弾の順に置く

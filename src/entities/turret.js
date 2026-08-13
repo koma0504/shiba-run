@@ -4,7 +4,7 @@ import {stage} from '../stage.js';
 import {S} from '../state.js';
 import {ctx} from '../canvas.js';
 import {roundRect,triangle} from '../draw.js';
-import {rectsOverlap,killEnemy,hurtPlayer} from '../combat.js';
+import {rectsOverlap,killEnemy,hurtPlayer,shotHitsEnemy} from '../combat.js';
 import {spawnRing,spawnParticles} from '../fx.js';
 import {sfx} from '../audio.js';
 
@@ -32,7 +32,7 @@ else hurtPlayer(2,tu.x+15);}}},
 
   hitByShot(sh){const list=S.turrets;
 for(let j=0;j<list.length;j++){const tu=list[j];
-if(!tu.deadTimer&&sh.x>tu.x-4&&sh.x<tu.x+tu.w+4&&sh.y>tu.y-4&&sh.y<tu.y+tu.h+4){
+if(shotHitsEnemy(sh,tu)){
 tu.hp-=sh.damage;tu.hitFlash=8;sfx('tink');spawnParticles(sh.x,sh.y,4,'#ffffff',1.6,0,12,2);
 if(tu.hp<=0)destroy(tu);
 return true;}}

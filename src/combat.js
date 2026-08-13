@@ -9,6 +9,10 @@ import {gameOver} from './ui.js';
 
 export function rectsOverlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 
+// ショットが敵に当たったか。ショットは点として扱い、敵の矩形を4px広げて甘めに見る。
+// 倒れかけ（deadTimer が立っている）の敵には当たらない
+export function shotHitsEnemy(sh,e){return !e.deadTimer&&sh.x>e.x-4&&sh.x<e.x+e.w+4&&sh.y>e.y-4&&sh.y<e.y+e.h+4;}
+
 // oを軸axで地形に押し戻す。o.vx/o.vyを見て、めり込んだ分だけ位置を補正する
 export function resolveTiles(o,ax){const c1=Math.max(0,Math.floor(o.x/TILE)),c2=Math.min(stage.cols-1,Math.floor((o.x+o.w-0.01)/TILE));const r1=Math.max(0,Math.floor(o.y/TILE)),r2=Math.min(ROWS-1,Math.floor((o.y+o.h-0.01)/TILE));for(let rr=r1;rr<=r2;rr++)for(let cc=c1;cc<=c2;cc++){if(!isSolid(cc,rr))continue;if(ax==='x'){if(o.vx>0)o.x=cc*TILE-o.w;else if(o.vx<0)o.x=(cc+1)*TILE;o.vx=0;}else{if(o.vy>0){o.y=rr*TILE-o.h;o.vy=0;o.onGround=true;}else if(o.vy<0){o.y=(rr+1)*TILE;o.vy=0;}}}}
 
@@ -16,7 +20,7 @@ export function loseLife(){S.lives--;S.combo=0;S.powerTimer=0;sfx('hit');spawnPa
 // ボス戦中に力尽きたら仕切り直すが、与えたダメージは持ち越す。
 // 毎回HP満タンに戻ると、何度挑んでも手応えが1ミリも進まず心が折れる
 if(S.bossStarted&&!S.bossDead){const carried=S.boss.hp;S.boss=makeBoss();S.boss.hp=carried;S.bossStarted=false;}
-if(S.lives<=0){resetPlayer(false);gameOver();}else resetPlayer(false);}
+resetPlayer(false);if(S.lives<=0)gameOver();}
 
 export function hurtPlayer(d,fromX){if(S.player.invincible>0||S.powerTimer>0)return;
 S.hp-=d;S.player.invincible=60;S.player.stunTimer=12;S.combo=0;
@@ -28,7 +32,7 @@ if(S.hp<=0)loseLife();}
 export function killEnemy(e,pts){e.deadTimer=e.deadTimer||1;S.score+=pts;popText(e.x+e.w/2,e.y-6,'+'+pts,'#a86b1e');spawnParticles(e.x+e.w/2,e.y+10,8,'#ffd23e',2.2,0.08,26,2.6);sfx('stomp');}
 
 // 踏んで倒したとき。着地するまでコンボが伸びる。bounceは踏んだあとの跳ね上がり速度
-export function stompEnemy(e,bounce){e.deadTimer=1;S.combo++;const pts=100*S.combo;S.score+=pts;
+function stompEnemy(e,bounce){e.deadTimer=1;S.combo++;const pts=100*S.combo;S.score+=pts;
 popText(e.x+10,e.y-6,S.combo>1?('コンボ×'+S.combo+'  +'+pts):('+'+pts),S.combo>1?'#c25a1e':'#5a4632');
 spawnParticles(e.x+15,e.y+8,8,'#ffffff',2.2,0.06,24,2.4);S.player.vy=bounce;S.player.usedDoubleJump=false;sfx('stomp');}
 

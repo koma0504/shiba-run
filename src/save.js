@@ -20,7 +20,7 @@ function storage(){try{return typeof localStorage==='undefined'?null:localStorag
 
 // 読めない・壊れている・型が違うときは既定値のまま黙って続行する。
 // セーブが壊れているせいで遊べなくなるのが最悪なので、部分的に読めた分だけ拾う
-export function loadSave(){
+function loadSave(){
 const store=storage();if(!store)return;
 let raw;try{raw=store.getItem(KEY);}catch(e){return;}
 if(!raw)return;
