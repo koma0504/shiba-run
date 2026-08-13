@@ -8,13 +8,21 @@ import {DRAW_ORDER,GIMMICKS} from './entities/index.js';
 import enemyBullet from './entities/enemyBullet.js';
 import {drawBoss} from './boss.js';
 
+// 背景の雲と丘の配置。丘は個体ごとに大きさが違う
+const CLOUDS=[],HILLS=[];
+for(let i=0;i<14;i++)CLOUDS.push([60+i*270,55+((i*53)%100)]);
+for(let i=0;i<18;i++)HILLS.push([80+i*350,130+((i*97)%90)]);
+
 // 背景や小物は毎フレーム描き直さず、起動時に一度だけ別canvasへ描いて使い回す
 let bgCv,fujiCv,hillCvs;
 // 空・山・丘はテーマで色が変わるので、面を読み込むたびに描き直す
 export function buildTheme(){const t=stage.theme;
 bgCv=makeCanvas(VIEW_W,VIEW_H);{const c=bgCv.getContext('2d');const sk=c.createLinearGradient(0,0,0,VIEW_H);sk.addColorStop(0,t.skyTop);sk.addColorStop(1,t.skyBottom);c.fillStyle=sk;c.fillRect(0,0,VIEW_W,VIEW_H);c.fillStyle=t.sun;c.beginPath();c.arc(566,66,32,0,TAU);c.fill();}
 fujiCv=makeCanvas(344,254);{const c=fujiCv.getContext('2d');c.fillStyle=t.mountain;triangleOn(c,2,252,172,2,342,252);c.fillStyle=t.mountainCap;triangleOn(c,120,79,172,2,224,79);}
-hillCvs=t.hills.map(function(col){const c2=makeCanvas(400,200),c=c2.getContext('2d');c.fillStyle=col;c.beginPath();c.arc(200,200,200,Math.PI,0);c.fill();return c2;});}
+// 丘は個体ごとの実寸で焼く。1枚を拡縮して使い回すと、フレーム内で唯一の
+// 拡縮つきdrawImageになり、毎フレーム補間が入る（塗り面積の約30%を占めていた）
+hillCvs=HILLS.map(function(h,k){const hr=h[1],c2=makeCanvas(hr*2,hr),c=c2.getContext('2d');
+c.fillStyle=t.hills[k&1];c.beginPath();c.arc(hr,hr,hr,Math.PI,0);c.fill();return c2;});}
 const cloudCv=makeCanvas(100,60);(function(){const c=cloudCv.getContext('2d');c.fillStyle='rgba(255,255,255,0.92)';c.beginPath();c.arc(24,36,20,0,TAU);c.arc(48,28,24,0,TAU);c.arc(76,36,19,0,TAU);c.fill();})();
 const boneCv=makeCanvas(30,22);(function(){const c=boneCv.getContext('2d');c.translate(15,11);c.fillStyle='#fffdf4';roundRectOn(c,-9,-3.2,18,6.4,3);c.fill();[[-9,-4],[-9,4],[9,-4],[9,4]].forEach(function(q){c.beginPath();c.arc(q[0],q[1],4.4,0,TAU);c.fill();});})();
 const heartCvs=['#e2554a','#cfc8bb'].map(function(col){const c2=makeCanvas(18,16),c=c2.getContext('2d');c.translate(9,4);c.fillStyle=col;c.beginPath();c.arc(-3.4,-2,4,0,TAU);c.arc(3.4,-2,4,0,TAU);c.fill();triangleOn(c,-7.2,-0.5,7.2,-0.5,0,8);return c2;})
@@ -46,9 +54,6 @@ ctx.strokeStyle=C3;ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(18,-25.5,2.4,0.3,2.
 ctx.fillStyle='#e2554a';roundRect(3,-21.5,13,3.5,2);ctx.fill();
 ctx.restore();}
 
-const CLOUDS=[],HILLS=[];
-for(let i=0;i<14;i++)CLOUDS.push([60+i*270,55+((i*53)%100)]);
-for(let i=0;i<18;i++)HILLS.push([80+i*350,130+((i*97)%90)]);
 function drawMeterBar(x,y,val,mx2,segH,col){ctx.fillStyle='rgba(20,26,34,0.55)';roundRect(x-2,y-2,14,mx2*segH+4,4);ctx.fill();
 ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fillRect(x,y,10,mx2*segH-2);
 ctx.fillStyle=col;
@@ -74,7 +79,7 @@ ctx.drawImage(bgCv,0,0);
 const fxp=Math.round(588-camI*0.15);
 ctx.drawImage(fujiCv,fxp,188);
 for(k=0;k<CLOUDS.length;k++){sx=CLOUDS[k][0]-camI*0.3;if(sx<-110||sx>VIEW_W+10)continue;ctx.drawImage(cloudCv,sx|0,CLOUDS[k][1]);}
-for(k=0;k<HILLS.length;k++){sx=HILLS[k][0]-camI*0.55;const hr=HILLS[k][1];if(sx<-hr-40||sx>VIEW_W+hr+40)continue;ctx.drawImage(hillCvs[k&1],(sx-hr)|0,440-hr,hr*2,hr);}
+for(k=0;k<HILLS.length;k++){sx=HILLS[k][0]-camI*0.55;const hr=HILLS[k][1];if(sx<-hr-40||sx>VIEW_W+hr+40)continue;ctx.drawImage(hillCvs[k],(sx-hr)|0,440-hr);}
 const c0=Math.max(0,Math.floor(camI/TILE)),c1=Math.min(stage.cols-1,c0+17);let rw;
 for(rw=0;rw<ROWS;rw++)fillRuns(stage.solidRuns[rw],camI,c0,c1,rw*TILE,TILE,stage.theme.dirt);
 for(rw=0;rw<ROWS;rw++)fillRuns(stage.solidRuns[rw],camI,c0,c1,rw*TILE+TILE-6,6,'rgba(0,0,0,0.08)');
