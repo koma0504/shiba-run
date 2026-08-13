@@ -4,9 +4,15 @@
 // Canvasへの描画呼び出し列をハッシュ化する。乱数は固定シード、時刻は固定刻み。
 // リファクタ前後でダイジェストが一致すれば、描画に現れる挙動は同一である。
 //
-//   node tools/replay-check.mjs            … ダイジェストを表示
+//   node tools/replay-check.mjs                  … ダイジェストを表示
+//   SCENARIO=boss node tools/replay-check.mjs    … ボス戦を検証する（既定は run）
 //   DUMP=/tmp/a.txt node tools/replay-check.mjs  … 描画呼び出し列を書き出す（差分調査用）
 //   EXPECT=<digest> node tools/replay-check.mjs  … 不一致なら終了コード1（CI用）
+//
+// シナリオ:
+//   run  … スタート地点から右へ走る。道中の地形・敵・アイテムを広く通る
+//   boss … ボスアリーナ手前へ瞬間移動してボス戦を検証する。
+//          runシナリオはボスまで届かないため、これがないとボス戦は無検証になる
 //
 // index.html のscriptがインライン／module srcのどちらでも動く。
 import { readFile, writeFile } from 'node:fs/promises';
@@ -15,7 +21,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const FRAMES = Number(process.env.FRAMES || 3600);
+const SCENARIO = process.env.SCENARIO || 'run';
+const FRAMES = Number(process.env.FRAMES || (SCENARIO === 'boss' ? 1800 : 3600));
 const SEED = Number(process.env.SEED || 12345);
 const DUMP = process.env.DUMP || '';
 const EXPECT = (process.env.EXPECT || '').trim();
@@ -187,10 +194,30 @@ if (moduleSrc) {
   new Function(inline[1])();
 }
 
+// bossシナリオでは、ゲーム開始直後にプレイヤーをボスアリーナ手前へ移動させる。
+// 中間地点も最後のものに合わせ、被弾死してもアリーナ付近から再開するようにする
+let teleportToBoss = null;
+if (SCENARIO === 'boss') {
+  if (!moduleSrc) {
+    console.error('bossシナリオはモジュール版のみ対応しています');
+    process.exit(1);
+  }
+  const { S } = await import(pathToFileURL(join(ROOT, 'src/state.js')).href);
+  const { TILE } = await import(pathToFileURL(join(ROOT, 'src/config.js')).href);
+  teleportToBoss = () => {
+    S.checkpointIndex = 3;
+    S.player.x = 240 * TILE;
+    S.player.y = 11 * TILE - 30;
+    S.player.vx = 0;
+    S.player.vy = 0;
+  };
+}
+
 let previous = {};
 let timestamp = 0;
 let ranFrames = 0;
 for (let f = 0; f < FRAMES; f++) {
+  if (f === 12 && teleportToBoss) teleportToBoss();
   const current = inputsAt(f);
   for (const code of KEYS) {
     if (current[code] && !previous[code]) fireKey('keydown', code);
@@ -213,7 +240,7 @@ const mainHash = sha(mainCanvas.log.join('\n')).slice(0, 12);
 const digest = sha(mainHash + '|' + offscreen.join(',')).slice(0, 16);
 
 if (DUMP) await writeFile(DUMP, mainCanvas.log.join('\n') + '\n');
-console.log(`mode=${mode} frames=${ranFrames} seed=${SEED} ops=${mainCanvas.log.length} offscreen=${offscreen.length}`);
+console.log(`scenario=${SCENARIO} mode=${mode} frames=${ranFrames} seed=${SEED} ops=${mainCanvas.log.length} offscreen=${offscreen.length}`);
 console.log(`digest=${digest}`);
 
 if (EXPECT && EXPECT !== digest) {

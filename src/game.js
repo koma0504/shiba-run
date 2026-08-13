@@ -123,9 +123,11 @@ if(S.powerTimer>0)killEnemy(cr,100);
 else if(S.player.vy>1&&S.player.y+S.player.h<cr.y+cr.h*0.7)stompEnemy(cr,true);
 else hurtPlayer(2,cr.x+15);}}
 if(!S.bossStarted&&!S.bossDead&&S.player.x>243*TILE){S.bossStarted=true;S.boss.mode='intro';S.boss.timer=0;S.boss.x=250*TILE;S.boss.y=-100;popText(250*TILE+35,240,'ニャン大将','#5a4632');}
-if(S.bossStarted&&!S.bossDead){const bs=S.boss;bs.timer++;if(bs.invincible>0)bs.invincible--;
+if(S.bossStarted&&!S.bossDead){const bs=S.boss;if(bs.invincible>0)bs.invincible--;
 bs.facing=pcx<bs.x+bs.w/2?-1:1;
-if(bs.mode==='intro'){bs.vy=Math.min(bs.vy+0.55,15);bs.y+=bs.vy;bs.onGround=false;resolveTiles(bs,'y');
+// timerは登場演出では加算、idle/shootでは減算して使う。
+// 以前はここで毎フレーム加算していたため、idleの減算と相殺してボスが行動しなかった
+if(bs.mode==='intro'){bs.timer++;bs.vy=Math.min(bs.vy+0.55,15);bs.y+=bs.vy;bs.onGround=false;resolveTiles(bs,'y');
 if(bs.onGround&&bs.timer>70){bs.mode='idle';bs.timer=45;}}
 else if(bs.mode==='die'){bs.deathTimer++;
 if(bs.deathTimer%8===0){spawnRing(bs.x+bs.w/2+(Math.random()-0.5)*50,bs.y+bs.h/2+(Math.random()-0.5)*40);sfx('boom');}

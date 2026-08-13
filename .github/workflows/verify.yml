@@ -19,7 +19,15 @@ jobs:
           node-version: '20'
 
       - name: リプレイダイジェストの照合
-        run: EXPECT="$(cat tools/replay-baseline.txt)" node tools/replay-check.mjs
+        run: |
+          for scenario in run boss; do
+            expected=$(grep "^${scenario}=" tools/replay-baseline.txt | cut -d= -f2)
+            if [ -z "$expected" ]; then
+              echo "tools/replay-baseline.txt に ${scenario} の基準値がありません" >&2
+              exit 1
+            fi
+            EXPECT="$expected" SCENARIO="$scenario" node tools/replay-check.mjs
+          done
 
       - name: 外部リソース参照がないことの確認
         run: |
