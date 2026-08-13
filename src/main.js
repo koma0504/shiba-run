@@ -3,17 +3,19 @@ import {S} from './state.js';
 import {resetAll} from './reset.js';
 import {updateFx} from './fx.js';
 import {bindInput} from './input.js';
-import {overlayBtn,startGame,consumeNextStage,togglePause,resumeGame} from './ui.js';
+import {overlayBtn,startGame,consumeNextStage,togglePause,resumeGame,showTitle,bindUi} from './ui.js';
 import {tryFire,step} from './game.js';
 import {render} from './render.js';
 
 bindInput({fire:tryFire,startGame:startGame,togglePause:togglePause});
+bindUi({resetAll:resetAll});
 overlayBtn.addEventListener('click',function(){initAudio();
 if(S.state==='pause'){resumeGame();return;}
 if(S.state==='title'){startGame();return;}
-// クリア後で次の面があるなら進む。それ以外（ゲームオーバー・全面クリア）は1面から
-if(consumeNextStage())S.stageIndex++;else S.stageIndex=0;
-resetAll();startGame();});
+// クリアで次の面があるなら進む。それ以外（ゲームオーバー・全面クリア）は面セレクトへ戻す。
+// 2面で力尽きたのに1面からやり直させるのは、面が増えるほど理不尽になる
+if(consumeNextStage()){S.stageIndex++;resetAll();startGame();return;}
+showTitle();});
 let last=0,accum=0;
 function loop(ts){requestAnimationFrame(loop);if(!last)last=ts;let dt=ts-last;last=ts;if(dt>100)dt=100;
 // ポーズ中はフレームを1つも進めない。step()だけでなく updateFx・S.time++・render() も止める。

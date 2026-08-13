@@ -1,12 +1,19 @@
 import {stage} from './stage.js';
 import {STAGES} from './stages/index.js';
 import {S} from './state.js';
-import {sfx} from './audio.js';
+import {sfx,initAudio} from './audio.js';
 import {confetti} from './fx.js';
-import {save,setMuted} from './save.js';
+import {save,setMuted,bestOf,isCleared,recordClear} from './save.js';
 import {clearInputEdges} from './input.js';
 
 export const overlay=document.getElementById('ov'),overlayTitle=document.getElementById('ovT'),overlayDesc=document.getElementById('ovD'),overlayBtn=document.getElementById('ovB');
+const stageList=document.getElementById('ovS');
+
+// 面のやり直しには reset.js が要るが、ここから import すると
+// combat → ui → reset → entities → cat → combat の循環になる。
+// bindInput と同じように main.js から渡してもらって、依存の向きを一方向に保つ
+let resetAll=null;
+export function bindUi(callbacks){resetAll=callbacks.resetAll;}
 
 const muteBtn=document.getElementById('bM');
 function syncMuteLabel(){muteBtn.textContent=save.muted?'🔇 消音中':'🔊 音あり';}
@@ -22,9 +29,35 @@ else if(S.state==='pause')resumeGame();}
 export function resumeGame(){if(S.state!=='pause')return;S.state='play';overlay.style.display='none';
 // ポーズ中に押されたジャンプが再開の1フレーム目に暴発しないよう、入力のエッジを消す
 clearInputEdges();}
-function showOverlay(t,d,b){overlayTitle.textContent=t;overlayDesc.innerHTML=d;overlayBtn.textContent=b;overlay.style.display='flex';}
+// 面セレクトはタイトルのときだけ出す。それ以外の場面では邪魔なので畳む
+function showOverlay(t,d,b,withStages){overlayTitle.textContent=t;overlayDesc.innerHTML=d;overlayBtn.textContent=b;
+stageList.style.display=withStages?'flex':'none';overlay.style.display='flex';}
 function formatTime(s){const m=Math.floor(s/60),ss=s%60;return m+':'+(ss<10?'0':'')+ss;}
-export function gameOver(){S.state='over';showOverlay('ゲームオーバー','スコア：'+S.score+' ／ 骨：'+S.boneCount+' 本','もう一度');}
+export function gameOver(){S.state='over';showOverlay('ゲームオーバー','スコア：'+S.score+' ／ 骨：'+S.boneCount+' 本','面をえらぶ');}
+
+// 1面は常に選べ、以降は前の面をクリアしていれば選べる。
+// 全面いつでも開放だと「進める」という動機が消える
+function isUnlocked(i){return i<=0||isCleared(STAGES[i-1].id);}
+
+function buildStageList(){
+stageList.innerHTML='';
+for(let i=0;i<STAGES.length;i++){
+const def=STAGES[i],unlocked=isUnlocked(i),best=bestOf(def.id);
+const btn=document.createElement('button');
+btn.className='stageBtn';
+btn.disabled=!unlocked;
+btn.textContent=unlocked
+  ?((i+1)+'. '+def.name+(isCleared(def.id)?' ✓':'')+(best?'　ベスト '+best:''))
+  :((i+1)+'. ？？？（前の面をクリアすると選べる）');
+if(unlocked)btn.addEventListener('click',function(){selectStage(i);});
+stageList.appendChild(btn);}}
+
+function selectStage(i){initAudio();S.stageIndex=i;resetAll();startGame();}
+
+// タイトルへ戻る。resetAll してから戻すので、ここでスペースを押せば
+// 選んでいる面を頭からやり直せる
+export function showTitle(){resetAll();S.state='title';buildStageList();
+showOverlay('柴犬ラン 5','遊ぶ面をえらんでください。','▶ '+STAGES[S.stageIndex].name+' をはじめる',true);}
 
 // クリア後にボタンを押したとき、次の面へ進むのか最初からやり直すのか。
 // main.jsがこれを見て分岐する
@@ -32,11 +65,16 @@ export let pendingNextStage=false;
 export function consumeNextStage(){const v=pendingNextStage;pendingNextStage=false;return v;}
 
 export function clearGame(){S.state='clear';sfx('clear');confetti();
-const sec=Math.floor(S.playFrames/60),tb=Math.max(0,stage.timeTarget-sec)*10,total=S.score+tb;let nb='';
-if(total>S.best){S.best=total;nb='<br>ベスト記録を更新';}
+const sec=Math.floor(S.playFrames/60),tb=Math.max(0,stage.timeTarget-sec)*10,total=S.score+tb;
+// クリアとベストを面のidで記録する。ここが保存の唯一の書き込み口
+const nb=recordClear(stage.id,total)?'<br>ベスト記録を更新':'';
 S.score=total;
 const detail='タイム：'+formatTime(sec)+' ／ 骨：'+S.boneCount+' / '+stage.totalBones+' 本<br>タイムボーナス：+'+tb+'<br>合計スコア：'+total+nb;
 const hasNext=S.stageIndex+1<STAGES.length;
 pendingNextStage=hasNext;
 if(hasNext)showOverlay(stage.name+' クリア',detail+'<br>次は「'+STAGES[S.stageIndex+1].name+'」','次の面へ');
-else showOverlay('全面クリア',detail+'<br>すべての面を踏破しました','もう一度あそぶ');}
+else showOverlay('全面クリア',detail+'<br>すべての面を踏破しました','面をえらぶ');}
+
+// 読み込み時にタイトルの面セレクトを組んでおく。
+// S.state は 'title' のままなので、ここでゲームの進行には触れない
+buildStageList();

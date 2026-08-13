@@ -145,18 +145,36 @@ function makeCanvas(w = 300, h = 150) {
 }
 
 function makeEl(id) {
-  return {
+  // 面セレクトはボタンを組み立てて並べる。canvasには一切触らないので描画列には出ないが、
+  // appendChild などが無いと例外になり、検証がそこで止まってしまう
+  const el = {
     id,
     style: {},
     textContent: '',
-    innerHTML: '',
     className: '',
+    disabled: false,
+    children: [],
+    appendChild(child) { this.children.push(child); return child; },
+    removeChild(child) {
+      const at = this.children.indexOf(child);
+      if (at >= 0) this.children.splice(at, 1);
+      return child;
+    },
+    setAttribute() {},
     addEventListener() {},
     removeEventListener() {},
     getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }),
     focus() {},
     click() {},
   };
+  // innerHTML='' で子を消せるようにしておく。実ブラウザはそう振る舞うので、
+  // 単なる文字列にしておくと「組み直したのに増え続ける」という嘘の観測になる
+  let html = '';
+  Object.defineProperty(el, 'innerHTML', {
+    get: () => html,
+    set: (next) => { html = String(next); if (html === '') el.children.length = 0; },
+  });
+  return el;
 }
 
 const mainCanvas = makeCanvas(640, 480);

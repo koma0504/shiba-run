@@ -19,6 +19,8 @@ button{font-family:inherit;font-weight:500;color:var(--text-primary);background:
 button:active{background:#dbe6ee;}
 #ovB{background:#2f6fed;border:none;color:#ffffff;}
 #ovB:active{background:#245ac6;}
+.stageBtn{font-size:13px;padding:8px 14px;width:100%;text-align:left;}
+.stageBtn:disabled{color:var(--text-muted);background:#f1f4f7;cursor:default;}
 </style>
 </head>
 <body>
@@ -30,6 +32,7 @@ button:active{background:#dbe6ee;}
       <div style="background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem 1.5rem;text-align:center;max-width:84%;">
         <p id="ovT" style="font-size:22px;font-weight:500;margin:0 0 8px;color:var(--text-primary);">柴犬ラン 5</p>
         <p id="ovD" style="font-size:13px;line-height:1.7;margin:0 0 14px;color:var(--text-secondary);">ワンショットで敵を撃てる。長押しでチャージショット。<br>HP制。砲台ネコの弾に注意。骨20本で1UP、肉で無敵＋全回復。<br>最深部のボス「ニャン大将」を倒して犬小屋へ。</p>
+        <div id="ovS" style="display:flex;flex-direction:column;gap:6px;margin:0 0 14px;"></div>
         <button id="ovB" style="font-size:15px;padding:9px 24px;">▶ スタート</button>
       </div>
     </div>
