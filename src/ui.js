@@ -12,8 +12,10 @@ const stageList=document.getElementById('ovS');
 // 面のやり直しには reset.js が要るが、ここから import すると
 // combat → ui → reset → entities → cat → combat の循環になる。
 // bindInput と同じように main.js から渡してもらって、依存の向きを一方向に保つ
-let resetAll=null;
-export function bindUi(callbacks){resetAll=callbacks.resetAll;}
+// reset.js が同名の関数を輸出しているので、受け取り側は Cb を付けて区別する。
+// 名前がぶつかると、1ファイルに固めたときに同じスコープへ並んで壊れる
+let resetAllCb=null;
+export function bindUi(callbacks){resetAllCb=callbacks.resetAll;}
 
 const muteBtn=document.getElementById('bM');
 function syncMuteLabel(){muteBtn.textContent=save.muted?'🔇 消音中':'🔊 音あり';}
@@ -52,11 +54,11 @@ btn.textContent=unlocked
 if(unlocked)btn.addEventListener('click',function(){selectStage(i);});
 stageList.appendChild(btn);}}
 
-function selectStage(i){initAudio();S.stageIndex=i;resetAll();startGame();}
+function selectStage(i){initAudio();S.stageIndex=i;resetAllCb();startGame();}
 
-// タイトルへ戻る。resetAll してから戻すので、ここでスペースを押せば
+// タイトルへ戻る。面をリセットしてから戻すので、ここでスペースを押せば
 // 選んでいる面を頭からやり直せる
-export function showTitle(){resetAll();S.state='title';buildStageList();
+export function showTitle(){resetAllCb();S.state='title';buildStageList();
 showOverlay('柴犬ラン 5','遊ぶ面をえらんでください。','▶ '+STAGES[S.stageIndex].name+' をはじめる',true);}
 
 // クリア後にボタンを押したとき、次の面へ進むのか最初からやり直すのか。
