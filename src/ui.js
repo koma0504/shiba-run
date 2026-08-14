@@ -72,8 +72,22 @@ S.score=total;
 const detail='タイム：'+formatTime(sec)+' ／ 骨：'+S.boneCount+' / '+stage.totalBones+' 本<br>タイムボーナス：+'+tb+'<br>合計スコア：'+total+nb;
 const hasNext=S.stageIndex+1<STAGES.length;
 pendingNextStage=hasNext;
-if(hasNext)showOverlay(stage.name+' クリア',detail+'<br>次は「'+STAGES[S.stageIndex+1].name+'」','次の面へ');
-else showOverlay('全面クリア',detail+'<br>すべての面を踏破しました','面をえらぶ');}
+if(hasNext){showOverlay(stage.name+' クリア',detail+'<br>次は「'+STAGES[S.stageIndex+1].name+'」','次の面へ');return;}
+showEnding(detail);}
+
+// 最終面のクリアは「面のクリア」ではなく「ゲームの終わり」。
+// 面クリアと同じ見出し・同じ言葉づかい・同じボタンだと、遊んだ人は終わったことに気づかないまま
+// 面セレクトへ戻ってしまう。見出し・締めの一文・ボタンの3つとも変えて、ここが終点だと分かるようにする。
+//
+// 描くのは DOM だけで canvas には触らない。ここで描画呼び出しを足すと boss シナリオの
+// ダイジェストが変わる（boss はボスを倒しきってクリアまで到達する）。
+function showEnding(detail){
+// 全面の自己ベストの合計。localStorage が使えない環境では 0 になるので、そのときは出さない
+let grand=0;for(const def of STAGES)grand+=bestOf(def.id);
+const sum=grand>0?'<br>全'+STAGES.length+'面の合計：'+grand:'';
+showOverlay('🏆 おしまい',
+  'すべての面をかけぬけて、柴犬は犬小屋へ帰りついた。<br><br>'+detail+sum+'<br><br>あそんでくれてありがとう。',
+  'タイトルへもどる');}
 
 // 読み込み時にタイトルの面セレクトを組んでおく。
 // S.state は 'title' のままなので、ここでゲームの進行には触れない
