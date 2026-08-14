@@ -14,13 +14,51 @@
   --text-muted:#8a929e;
 }
 *{box-sizing:border-box;}
-body{margin:0;padding:16px;background:#eef4f8;font-family:var(--font-sans);}
+/* 画面いっぱいを使う。以前は上に貼り付いていたので、スマホでは下2/3が空白だった。
+   縦に中央寄せすると余白が上下へ均等に散り、操作ボタンも指の届く位置まで下りてくる */
+body{margin:0;padding:12px;background:#eef4f8;font-family:var(--font-sans);
+  min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;}
+#shibaWrap{flex:1;display:flex;flex-direction:column;justify-content:center;}
+/* canvas は 4:3 のまま。縦が足りない画面（横向きスマホなど）では幅ではなく
+   高さで大きさが決まるので、「使える高さ × 4/3」を幅の上限にする。
+   これを書かないと、横向きにしたときに canvas がはみ出して操作ボタンが画面外へ出る。
+   170px は操作ボタン・ミュート・キー説明・余白の合計のおおよその高さ */
+#stage{width:100%;max-width:min(640px,calc((100dvh - 170px) * 4 / 3));margin-left:auto;margin-right:auto;}
+#ctrl,#meta,#kbdHint{width:100%;max-width:640px;margin-left:auto;margin-right:auto;}
+#ctrl{margin-top:10px;}
+/* 横向きスマホ。キー説明は指で遊ぶ場面では読まれないので畳み、その分を画面に回す。
+   予約分は 操作ボタン66 + ミュート37 + 本文の余白24 の実測値から140 */
+@media (max-height:520px){
+  #kbdHint{display:none;}
+  #stage{max-width:min(640px,calc((100dvh - 140px) * 4 / 3));}
+}
+/* 縦持ちのスマホ。横スクロールのゲームを縦長の画面で縦いっぱいにするのは原理的に無理で、
+   canvas は画面幅で頭打ちになる（4:3 なので高さは幅の3/4より大きくならない）。
+   だから余った縦を canvas ではなく操作ボタンに使う。ボタンを大きくして下へ寄せると、
+   空白が「余り」ではなく「親指の通り道」になる */
+@media (max-width:560px) and (orientation:portrait){
+  /* 均等割りにすると隙間が3か所にできて散らかる。canvas を上に置き、
+     操作の一群を下へ寄せて、余白を1か所にまとめる */
+  #shibaWrap{justify-content:flex-start;}
+  /* 余白を canvas の上と、canvas と操作の間へ半分ずつ配る。
+     操作は画面の下端に貼り付き、canvas は上寄りの中央に来る。
+     どちらか片方だけを auto にすると、空白が1か所に固まって「作りかけ」に見える */
+  #stage{margin-top:auto;}
+  #ctrl{margin-top:auto;}
+  .cbtn{height:76px;font-size:22px;}
+  #bL,#bR{min-width:76px;}
+  #bS,#bJ{min-width:106px;font-size:15px;}
+  #bM{font-size:14px;padding:10px 20px;}
+}
 button{font-family:inherit;font-weight:500;color:var(--text-primary);background:#ffffff;border:1px solid var(--border);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 button:active{background:#dbe6ee;}
 #ovB{background:#2f6fed;border:none;color:#ffffff;}
 #ovB:active{background:#245ac6;}
 .stageBtn{font-size:13px;padding:8px 14px;width:100%;text-align:left;}
 .stageBtn:disabled{color:var(--text-muted);background:#f1f4f7;cursor:default;}
+/* 操作ボタンの寸法はここで持つ。インライン style に書くとメディアクエリで上書きできない */
+.cbtn{min-width:58px;height:56px;font-size:20px;touch-action:none;}
+#bS,#bJ{min-width:82px;font-size:14px;font-weight:500;}
 </style>
 </head>
 <body>
@@ -37,20 +75,20 @@ button:active{background:#dbe6ee;}
       </div>
     </div>
   </div>
-  <div id="ctrl" style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;touch-action:none;">
+  <div id="ctrl" style="display:flex;justify-content:space-between;align-items:center;gap:8px;touch-action:none;">
     <div style="display:flex;gap:8px;">
-      <button class="cbtn" id="bL" aria-label="左へ移動" style="min-width:58px;height:56px;font-size:20px;touch-action:none;">←</button>
-      <button class="cbtn" id="bR" aria-label="右へ移動" style="min-width:58px;height:56px;font-size:20px;touch-action:none;">→</button>
+      <button class="cbtn" id="bL" aria-label="左へ移動">←</button>
+      <button class="cbtn" id="bR" aria-label="右へ移動">→</button>
     </div>
     <div style="display:flex;gap:8px;">
-      <button class="cbtn" id="bS" style="min-width:82px;height:56px;font-size:14px;font-weight:500;touch-action:none;">⚡ ショット</button>
-      <button class="cbtn" id="bJ" style="min-width:82px;height:56px;font-size:14px;font-weight:500;touch-action:none;">↑ ジャンプ</button>
+      <button class="cbtn" id="bS">⚡ ショット</button>
+      <button class="cbtn" id="bJ">↑ ジャンプ</button>
     </div>
   </div>
   <div id="meta" style="display:flex;justify-content:center;gap:8px;margin-top:8px;">
     <button id="bM" style="font-size:12px;padding:6px 14px;">🔊 音あり</button>
   </div>
-  <p style="margin:8px 0 0;text-align:center;font-size:11px;color:var(--text-muted);">PC：← → 移動 ／ スペース＝ジャンプ（空中で2段） ／ Z・X＝ショット（長押しでチャージ）</p>
+  <p id="kbdHint" style="margin:8px 0 0;text-align:center;font-size:11px;color:var(--text-muted);">PC：← → 移動 ／ スペース＝ジャンプ（空中で2段） ／ Z・X＝ショット（長押しでチャージ）</p>
 </div>
 <script type="module" src="src/main.js"></script>
 </body>
