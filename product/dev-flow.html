@@ -1,0 +1,721 @@
+<title>発売までの7フェーズ</title>
+<style>
+:root{
+  --ground:#f6f7f9;
+  --surface:#ffffff;
+  --ink:#151b23;
+  --muted:#5b6674;
+  --rule:#dde2e8;
+  --rule-strong:#c3ccd6;
+  --gate:#a63d2f;
+  --gate-bg:#fbf1ef;
+  --mark:#2c5578;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+  --col:min(70ch,100%);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#111419;
+    --surface:#181d24;
+    --ink:#e3e8ee;
+    --muted:#96a1af;
+    --rule:#262d37;
+    --rule-strong:#39434f;
+    --gate:#e08c78;
+    --gate-bg:#231a18;
+    --mark:#8fb6d8;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#111419;
+  --surface:#181d24;
+  --ink:#e3e8ee;
+  --muted:#96a1af;
+  --rule:#262d37;
+  --rule-strong:#39434f;
+  --gate:#e08c78;
+  --gate-bg:#231a18;
+  --mark:#8fb6d8;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  font-size:16px;
+  line-height:1.85;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{
+  display:grid;
+  grid-template-columns:1fr var(--col) 1fr;
+  row-gap:0;
+  padding:0 20px 96px;
+}
+.wrap > *{grid-column:2;}
+.bleed{grid-column:1 / -1;display:grid;grid-template-columns:inherit;}
+.bleed > *{grid-column:2;}
+
+/* ---- 見出し ---- */
+h1{
+  font-size:clamp(28px,5.2vw,42px);
+  line-height:1.3;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  text-wrap:balance;
+  margin:0 0 12px;
+}
+h2{
+  font-size:clamp(20px,3.4vw,26px);
+  line-height:1.45;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  text-wrap:balance;
+  margin:0;
+}
+h3{
+  font-size:17px;
+  font-weight:700;
+  line-height:1.6;
+  margin:36px 0 8px;
+}
+h4{
+  font-size:15px;
+  font-weight:700;
+  margin:24px 0 6px;
+}
+p{margin:0 0 16px;}
+ul,ol{margin:0 0 16px;padding-left:1.35em;}
+li{margin:0 0 6px;}
+strong{font-weight:700;}
+code{
+  font-family:var(--font-mono);
+  font-size:0.88em;
+  background:var(--surface);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  padding:1px 5px;
+}
+a{color:var(--mark);}
+
+/* ---- 冒頭 ---- */
+header{padding:72px 0 40px;}
+.kicker{
+  font-family:var(--font-mono);
+  font-size:12px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 18px;
+}
+.lede{font-size:18px;line-height:1.8;color:var(--muted);margin:0;}
+
+/* ---- フェーズの見出し帯 ---- */
+.phase{
+  display:flex;
+  align-items:baseline;
+  gap:16px;
+  margin:64px 0 4px;
+  padding-top:22px;
+  border-top:2px solid var(--rule-strong);
+}
+.phase .num{
+  font-family:var(--font-mono);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  color:var(--muted);
+  white-space:nowrap;
+  padding-top:4px;
+}
+
+/* ---- ステップ（左に識別子） ---- */
+.step{
+  display:grid;
+  grid-template-columns:52px 1fr;
+  gap:0 14px;
+  margin:22px 0;
+}
+.step .id{
+  font-family:var(--font-mono);
+  font-size:13px;
+  font-weight:700;
+  color:var(--mark);
+  padding-top:5px;
+}
+.step .body > :last-child{margin-bottom:0;}
+.step h4{margin-top:0;}
+
+/* ---- ゲート: 流れを断ち切る帯 ---- */
+.gate{
+  background:var(--gate-bg);
+  border-top:1px solid var(--gate);
+  border-bottom:1px solid var(--gate);
+  margin:32px 0;
+  padding:24px 0;
+}
+.gate .inner{border-left:3px solid var(--gate);padding-left:18px;}
+.gate .tag{
+  font-family:var(--font-mono);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:0.12em;
+  color:var(--gate);
+  margin:0 0 8px;
+}
+.gate h3{margin:0 0 10px;font-size:18px;}
+.gate ul{margin-bottom:0;}
+.gate > .inner > :last-child{margin-bottom:0;}
+
+/* ---- チェックリスト ---- */
+.check{
+  list-style:none;
+  padding:0;
+  margin:0 0 16px;
+  font-size:15px;
+}
+.check li{
+  position:relative;
+  padding-left:26px;
+  margin:0 0 7px;
+  line-height:1.7;
+}
+.check li::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0.55em;
+  width:13px;
+  height:13px;
+  border:1.5px solid var(--rule-strong);
+  border-radius:3px;
+}
+
+/* ---- 表 ---- */
+.scroll{overflow-x:auto;margin:0 0 20px;}
+table{
+  border-collapse:collapse;
+  width:100%;
+  min-width:520px;
+  font-size:14.5px;
+  line-height:1.65;
+  background:var(--surface);
+}
+th,td{
+  text-align:left;
+  vertical-align:top;
+  padding:10px 14px;
+  border-bottom:1px solid var(--rule);
+}
+thead th{
+  border-bottom:1.5px solid var(--rule-strong);
+  font-size:12.5px;
+  font-weight:700;
+  letter-spacing:0.04em;
+  color:var(--muted);
+  white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:none;}
+td.n,th.n{font-family:var(--font-mono);white-space:nowrap;font-variant-numeric:tabular-nums;}
+td.gatecell{color:var(--gate);font-weight:700;}
+
+/* ---- 図・引用 ---- */
+pre.diagram{
+  font-family:var(--font-mono);
+  font-size:12px;
+  line-height:1.5;
+  background:var(--surface);
+  border:1px solid var(--rule);
+  border-radius:6px;
+  padding:18px;
+  margin:0 0 20px;
+  overflow-x:auto;
+}
+.note{
+  border-left:3px solid var(--rule-strong);
+  padding:2px 0 2px 16px;
+  margin:0 0 20px;
+  color:var(--muted);
+  font-size:15px;
+}
+.note > :last-child{margin-bottom:0;}
+.quote{
+  font-size:15px;
+  border-left:3px solid var(--mark);
+  padding:2px 0 2px 16px;
+  margin:0 0 20px;
+}
+.quote > :last-child{margin-bottom:0;}
+.src{font-size:13px;color:var(--muted);}
+
+footer{
+  margin-top:72px;
+  padding-top:24px;
+  border-top:2px solid var(--rule-strong);
+  font-size:14px;
+  color:var(--muted);
+}
+footer a{word-break:break-all;}
+footer ul{padding-left:1.2em;}
+
+/* 広い画面では、表だけ読み幅より外へ出す。読み物の1行は短いほうが読みやすいが、
+   表は列が潰れるほうが読みにくい。同じ幅に揃える理由がない */
+@media (min-width:920px){
+  .scroll{
+    grid-column:1 / -1;
+    width:min(100% - 48px,1000px);
+    margin-left:auto;
+    margin-right:auto;
+  }
+}
+@media (max-width:560px){
+  body{font-size:15.5px;}
+  .wrap{padding:0 16px 72px;}
+  .step{grid-template-columns:1fr;gap:0;}
+  .step .id{padding-top:0;}
+}
+</style>
+
+<div class="wrap">
+
+<header>
+  <p class="kicker">開発フローの調査 / 2026-08-13</p>
+  <h1>発売までの7フェーズ</h1>
+  <p class="lede">ゲーム会社が何もないところから発売までに辿る道のりと、その各段階に埋まっているゲートとループ。個人開発向けの圧縮版つき。</p>
+</header>
+
+<h2>この文書の読み方</h2>
+
+<p>開発フローは工程表ではなく、<strong>中止判断の連鎖</strong>である。安い工程を先に置き、高い工程へ進む前に必ずゲート（続行／作り直し／中止）を通す。この構造の目的は「作ること」ではなく「安く早く殺すこと」にある。</p>
+
+<p>下の各フェーズは順に並んでいるが、<strong>ゲートで落ちたら上流のループへ戻る</strong>。一直線に進むことは想定されていない。</p>
+
+<div class="note">
+<p><strong>出典の扱い。</strong> フェーズ0の内容（ステップ・ゲート・ループ・テンプレート）は出典を取って調べたもので、末尾に一次・二次のURLを挙げてある。フェーズ1〜6の記述は<strong>一般的な業界の実務知識として書いたもので、この調査では出典を取っていない</strong>。数字を意思決定に使うなら、この2つを区別すること。</p>
+</div>
+
+<h2 style="margin-top:56px;">全体像</h2>
+
+<div class="scroll">
+<table>
+<thead><tr><th class="n">#</th><th>フェーズ</th><th>目的</th><th>主な成果物</th><th>通過条件（ゲート）</th></tr></thead>
+<tbody>
+<tr><td class="n">0</td><td>発案・市場調査</td><td>誰に何を売るかを決める</td><td>ワンシート</td><td class="gatecell">1文で言え、買う人を指せる</td></tr>
+<tr><td class="n">1</td><td>プロトタイプ</td><td>面白いかだけを確かめる</td><td>遊べる検証台</td><td class="gatecell">他人が促されずに2回目を始める</td></tr>
+<tr><td class="n">2</td><td>プリプロダクション</td><td>量産の設計図を確定する</td><td>縦切り（完成品質の数分間）</td><td class="gatecell">残りの作業量と期日が言える</td></tr>
+<tr><td class="n">3</td><td>プロダクション</td><td>量産する</td><td>全コンテンツ</td><td class="gatecell">最初から最後まで通せる</td></tr>
+<tr><td class="n">4</td><td>仕上げ</td><td>出せる状態にする</td><td>審査通過ビルド</td><td class="gatecell">外部の人が詰まらず終われる</td></tr>
+<tr><td class="n">5</td><td>ローンチ</td><td>出す</td><td>公開・ストア素材</td><td>—</td></tr>
+<tr><td class="n">6</td><td>ライブ運用</td><td>数字を見て直す</td><td>更新・ポストモーテム</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+<p>伝統的な7段階（concept / prototype / greenlight / pre-production / production / live ops / post-production）は、Develop・Deploy・Grow の3段階へ収束しつつあり、<strong>prototype と greenlight はほぼ融合している</strong>という報告がある。つまり「プロトタイプを作ってから承認する」のではなく<strong>「プロトタイプが承認そのもの」</strong>になってきている。</p>
+</div>
+
+<!-- ============ フェーズ0 ============ -->
+
+<div class="phase"><span class="num">PHASE 0</span><h2>発案・市場調査</h2></div>
+
+<p>最も安く、最も多くの案が死ぬ段階。ここでの成果物は100ページの仕様書ではなく<strong>A4のワンシート1枚</strong>でよい。多くのスタジオはプリプロダクションを1ページの文書で始め、プロトタイプがゲームの価値を証明するにつれて詳細を足していく。</p>
+
+<h3>フェーズ0の内部フロー</h3>
+
+<div class="scroll">
+<pre class="diagram">                       ┌───────────────────────────────────────────┐
+                       │            [ループA] 発散と収束             │
+                       ↓                                           │
+  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐          │
+  │ S0 制約の確定 │──▶│ S1 市場調査   │──▶│ S2 アイデア出し│──────────┘
+  │ 期間/予算/    │   │ ジャンル・競合 │   │ 大量に出す     │
+  │ 技術/自分の型 │   │ 需要のある棚   │   │ (20〜100案)   │
+  └──────────────┘   └──────────────┘   └──────┬───────┘
+                                                │
+                                                ↓
+                                        ┌───────────────┐
+                                        │ S3 一次フィルタ │
+                                        │ 制約×市場で篩う │
+                                        └───────┬───────┘
+                                                │ 残 3〜5案
+                                    ┌───── G1: コンセプト・ゲート ─────┐
+                                    │ 1文で言えるか / 誰が買うか /      │
+                                    │ 自分の期間で作れるか              │
+                                    └───────┬──────────────────────┘
+                                            │ 残 1〜3案
+                                            ↓
+                       ┌────────────────────────────────────────┐
+                       │       [ループB] コンセプト検証            │
+                       ↓                                        │
+                ┌──────────────┐   ┌──────────────┐   ┌────────┴─────┐
+                │ S4 ワンシート  │──▶│ S5 紙/最小プロト│──▶│ S6 他人に      │
+                │ +ハイコンセプト│   │  コアループのみ │   │  遊ばせる      │
+                │ +偽トレーラー  │   │  (数日〜2週)   │   │  (5〜10人)    │
+                └──────────────┘   └──────────────┘   └────────┬─────┘
+                                                                │
+                                    ┌───── G2: FUNゲート ────────┘
+                                    │ 「面白い」が見つかったか       │
+                                    │ = 言わなくても遊び続けるか     │
+                                    └───────┬───────────────────┘
+                                            │ 通過
+                                            ↓
+                                  ┌──────────────────┐
+                                  │ S7 マーケット検証  │
+                                  │ 見た目だけで需要を  │
+                                  │ 測る(広告/ストア/  │
+                                  │ SNS/トレーラー)    │
+                                  └────────┬─────────┘
+                                           │
+                               ┌─── G3: グリーンライト ───┐
+                               │ 作る価値 × 売れる見込み  │
+                               │ × 完走できる規模          │
+                               └────────┬──────────────┘
+                                        │ 通過
+                                        ↓
+                                   フェーズ1・2 へ
+
+  ▼ 落ちたときの戻り先
+    G1で落ちる → S2 へ（アイデアを出し直す。1案に固執しない）
+    G2で落ちる → S4 へ（同じ素材で別のコアループを試す）or S2 へ（案ごと捨てる）
+    G3で落ちる → S1 へ（市場の読みが外れている。ジャンル/観客から見直す）</pre>
+</div>
+
+<h3>各ステップ</h3>
+
+<div class="step"><span class="id">S0</span><div class="body">
+<h4>制約の確定</h4>
+<p>使える月数・金額・週あたり時間・撤退ライン・絶対にやらないことを、<strong>すべて数字で</strong>紙に書く。ここが決まらないと撤退ラインが引けない。</p>
+</div></div>
+
+<div class="step"><span class="id">S1</span><div class="body">
+<h4>市場調査（棚を選ぶ）</h4>
+<p>販売先を1つ決め、候補タグの売れ筋を各10本リストアップし、上位・中位を実際に遊ぶ。<strong>ジャンル選択は最大のマーケティング判断</strong>であり、ここは削ってはいけない。完了の定義は「この棚の客は誰で、いま何を買っているか」を3分間しゃべれること。</p>
+</div></div>
+
+<div class="step"><span class="id">S2</span><div class="body">
+<h4>アイデア出し（発散）</h4>
+<p>タイマーを掛けて1案1行で大量に出す。<strong>鉄則は、発散と収束を同じ時間に混ぜないこと。</strong> 出すときは評価しない。</p>
+</div></div>
+
+<div class="step"><span class="id">S3</span><div class="body">
+<h4>一次フィルタ（収束）</h4>
+<p>翌日、G1のチェックリストを1案10分で機械的に適用する。落とした案は<strong>理由を1行ずつ書いて残す</strong>。後で戻る先になる。</p>
+</div></div>
+
+<div class="gate bleed"><div class="inner">
+<p class="tag">GATE 1</p>
+<h3>コンセプト・ゲート</h3>
+<p>1案あたり10分で判定する。<strong>すべて満たせば通過。1つでも欠ければ落とす。</strong></p>
+<ul class="check">
+<li>ハイコンセプトを1文で言える</li>
+<li>その1文に<strong>プレイヤーの動詞</strong>が入っている</li>
+<li>その1文に<strong>他にない要素</strong>が入っている</li>
+<li>買う人を具体的に指せる（「〇〇と△△を遊んだ人」の形で言える）</li>
+<li>置く棚（ジャンル／タグ）が決まっており、その棚に自分の規模の成功例がある</li>
+<li>自分の技術で作れる（新規に習得が必要な技術が2つ以下）</li>
+<li>制約期間の 1/3 以内で「遊べる最小形」に到達できる見込みがある</li>
+<li>自分がこの案に半年〜1年飽きない自信がある</li>
+<li>30秒トレーラーの絵コンテが12コマ埋まる（見せ場が12個ある）</li>
+</ul>
+<p style="margin-top:14px;"><strong>G1は「既存作がないこと」を検査しない。</strong> 通過した案には、別途、同じことをやっている既存作がないかの飽和チェックを掛ける必要がある。</p>
+</div></div>
+
+<div class="step"><span class="id">S4</span><div class="body">
+<h4>ワンシート・ハイコンセプト・偽トレーラー</h4>
+<p>A4に1枚。はみ出したら削る。あわせて<strong>30秒トレーラーの絵コンテを12コマ</strong>描き、<strong>発売時のプレスリリースを先に1枚書く</strong>。魅力的に書けなければ作らない（Working Backwards）。<strong>12コマが埋まらない案は、実装前にここで捨てる。</strong>実装前の最も安い関門。</p>
+</div></div>
+
+<div class="step"><span class="id">S5</span><div class="body">
+<h4>紙プロト／最小プロト</h4>
+<p>コアループだけを作る。タイトル画面・メニュー・音・演出・セーブは作らない。<strong>磨きすぎたプロトタイプは罠</strong>で、見た目に投資すると捨てられなくなる。ゲームを良くする最も効果的な方法は、粗いプロトタイプを作って実際に試すこと。</p>
+</div></div>
+
+<div class="step"><span class="id">S6</span><div class="body">
+<h4>他人に遊ばせる</h4>
+<p><strong>知り合いでない</strong>人に5〜10人。横で黙って観察し、話しかけない。友人は正直な批判をくれない。</p>
+</div></div>
+
+<div class="gate bleed"><div class="inner">
+<p class="tag">GATE 2</p>
+<h3>FUNゲート — 「面白い」を言葉ではなく行動で測る</h3>
+<h4 style="margin-top:0;">観察で測る</h4>
+<ul class="check">
+<li>誰にも促されずに2回目を始めた人が半数以上いる</li>
+<li>「もう1回」と口に出した人がいる</li>
+<li>詰まった箇所が全員バラバラではない（＝設計の問題が特定できる）</li>
+<li>プレイ中に自発的に声が出た（笑い・悔しがり・驚き）</li>
+<li>自分から独自の遊び方・攻略を発明した人がいる</li>
+</ul>
+<h4>逆向きの警報（1つでも当てはまれば黄信号）</h4>
+<ul class="check">
+<li>「ここが面白いんです」と口頭で説明しないと伝わらない</li>
+<li>「グラフィックが入れば面白くなる」と自分が思っている</li>
+<li>「もっとコンテンツを足せば面白くなる」と自分が思っている</li>
+<li><strong>面白くない気がし始めている</strong></li>
+</ul>
+<div class="quote" style="margin-top:16px;">
+<p>うまくいかなそう／十分に面白くないと感じ始めたら、それは<strong>すでにキルすべきだったサイン</strong>である。</p>
+<p class="src">— Supercell「10 learnings from 10 years」</p>
+</div>
+</div></div>
+
+<div class="step"><span class="id">S7</span><div class="body">
+<h4>マーケット検証（見た目だけで需要を測る）</h4>
+<p>絵コンテを動画にしてSNS・コミュニティ・ストアページに出し、数字を取る。<strong>ストアページは早く出してウィッシュリストを集める</strong>。ただしトレーラーのないストアページは注意持続時間に合わない。カプセル画像・最初の4枚のスクリーンショット・トレーラーを執拗に最適化する。ここがCTRを決め、CTRがアルゴリズムに直結する。</p>
+</div></div>
+
+<div class="gate bleed"><div class="inner">
+<p class="tag">GATE 3</p>
+<h3>グリーンライト — 作ると決める</h3>
+<h4 style="margin-top:0;">作る価値</h4>
+<ul class="check">
+<li>G2を通過している（行動として観察された）</li>
+<li>ワンシートが1枚に収まっている</li>
+<li>偽プレスリリース／トレーラー台本が、自分で読んでもわくわくする</li>
+<li>「5分・10分を超えて広がるビジョン」がある（10時間目の楽しみを言える）</li>
+</ul>
+<h4>売れる見込み</h4>
+<ul class="check">
+<li>棚（タグ）が確定し、そのタグの直近の売れ筋を10本触った</li>
+<li>競合3本に対して「なぜこっちを買うか」を1行ずつ書けた</li>
+<li>見た目だけで需要の兆候が出た（ウィッシュリスト／CTR／SNS反応のいずれか）</li>
+<li>想定価格 × 想定販売本数 が、投入する期間の機会費用を上回る</li>
+</ul>
+<h4>完走できる</h4>
+<ul class="check">
+<li>縦切りを制約期間の 1/3 で作れる計画がある</li>
+<li>新規習得が必要な技術が2つ以下</li>
+<li>外注／購入が必要なアセットの費用が予算内</li>
+<li><strong>撤退条件を日付付きで書いた</strong>（例: 「◯月◯日までにWL 1,000未満なら中止」）</li>
+</ul>
+<p style="margin-top:14px;">撤退条件を先に書くのは、<strong>遅い損切りほど苦しくなる</strong>から。6人×6ヶ月の損切りは100人×18ヶ月より、心理的にも経済的にも楽である。個人開発は「1人×Nヶ月」なので、Nが大きくなるほど撤退が不可能になる。<strong>まだ撤退が苦しくない今のうちにしか書けない。</strong></p>
+</div></div>
+
+<h3>スコア表を信じすぎない</h3>
+
+<div class="quote">
+<p>多くのゲーム企業が堅牢な分析で新規プロジェクトを承認しようとしたが、<strong>実績はスプレッドシートの予測に全く近づかなかった（実績と予測は無相関だった）</strong>。新規事業をスプレッドシートで分析するのは無価値か、むしろ負の価値を生む。新規事業の実績を正確に予測することは不可能である。</p>
+<p class="src">— Lloyd Melnick（分析駆動グリーンライト・プロセスの提唱者自身による結論）</p>
+</div>
+
+<p>一方で、関係者全員が同席する場に市場データを持ち込み、<strong>主観とバイアスを具体的なスコアに変換する</strong>ことを推奨する立場もある。この2つは矛盾しない。<strong>スコア表の価値は「予測」ではなく「議論の可視化」にある。</strong> 議論相手がいない個人開発では、スコア表よりも上記のような YES/NO の二値チェックリストのほうが機能する。</p>
+
+<p>なお Supercell には<strong>マネジメントによるグリーンライト手続きが存在しない</strong>。マイルストーン会議で財務にプロジェクトの存在を正当化する場もなく、チームが自分でキルを決める。承認者が自分しかいない個人開発者に必要なのは、承認の儀式ではなく<strong>自分を止める仕掛け</strong>である。</p>
+
+<h3>フェーズ0の中にある3つのループ</h3>
+
+<div class="scroll">
+<table>
+<thead><tr><th>ループ</th><th>経路</th><th>要点</th></tr></thead>
+<tbody>
+<tr>
+<td><strong>A 発散と収束</strong></td>
+<td class="n">S1 → S2 → S3 → G1 →（落ちたら）S2</td>
+<td>出すときは評価しない。実データの比率は Voodoo 1,000本 → 4本ローンチ（0.4%）、Double Fine 25案 → 4本プロトタイプ（16%）</td>
+</tr>
+<tr>
+<td><strong>B コンセプト検証</strong></td>
+<td class="n">S4 → S5 → S6 → G2 →（落ちたら）S4 か S2</td>
+<td>テストと改善の回数が多いほど良くなる（Rule of the Loop）。<strong>1周を短くして周回数を稼ぐことが目的関数。</strong> Double Fine の Amnesia Fortnight は2週間、Supercell のラフプロトは数週間、Voodoo は3〜4ヶ月で新作をローンチする</td>
+</tr>
+<tr>
+<td><strong>C 市場との往復</strong></td>
+<td class="n">S1 → S4 → S7 → G3 →（落ちたら）S1</td>
+<td>完成後のプレスリリースを先に書く。ストアページを先に出す。1週間〜1ヶ月で終わる磨いたプロトタイプ＋小さなランディングページを多数のパブリッシャーとSNSに送る</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>ワンシートのテンプレート</h3>
+
+<p>複数ソースを統合した実用版。<strong>A4で1枚に収める。はみ出したら削る。</strong> 合格ラインは「誰が見ても30秒以内にゲームの本質を掴める」こと。</p>
+
+<h4>ヘッダ（5行以内）</h4>
+<ul class="check">
+<li>タイトル（できればロゴ）／連絡先</li>
+<li>ハイコンセプト1文</li>
+<li>ジャンル・タグ（ストアのタグを3〜5個そのまま）</li>
+<li>対象プラットフォーム</li>
+<li>対象客層（年齢・既プレイ作品で書く。<strong>「幅広い層」は禁止</strong>）</li>
+<li>対象レーティング／想定発売時期／想定価格</li>
+</ul>
+
+<h4>本体</h4>
+<ul class="check">
+<li>サマリ（3〜5行）— 何をするゲームか。<strong>動詞で書く</strong></li>
+<li>コアループ（3〜5ステップ）— 「〜する → 〜が起きる → 〜が増える → 最初に戻る」</li>
+<li>USP 3つ — 他作品にない要素だけ。<strong>「面白い」はUSPではない</strong></li>
+<li>プレイヤーができるクールなこと 3〜5個 — 具体的な動詞で</li>
+<li>世界観・トーン・美術の方向（3行＋参考画像2〜3枚）</li>
+<li>物語（あるなら）— 発端・中盤・結末を各1行</li>
+<li>競合作品 3〜5本 — 実タイトル名。「うちはここが違う」を各1行</li>
+<li>想定収益モデル／規模と期間（プレイ時間・開発期間・人数）</li>
+<li>リスク3つと、それをどう潰すか</li>
+</ul>
+
+<div class="note">
+<p><strong>GDDはフェーズ0では書かない。</strong>「100ページのバインダは死んだ」は「何も書くな」ではなく、形式が変わっただけで必要性は消えていない。中間形式として1ページ1テーマの ten-pager があり、これを書くならG3通過後、プリプロダクションの入口が妥当。</p>
+</div>
+
+<h3>ハイコンセプト1文の型</h3>
+
+<p>ハイコンセプトとは「簡潔に述べた前提でピッチできる作品」のこと。極端な例は『Snakes on a Plane』のように<strong>タイトルが前提のすべてを説明している</strong>もの。</p>
+
+<div class="scroll">
+<table>
+<thead><tr><th>型</th><th>形</th><th>注意</th></tr></thead>
+<tbody>
+<tr><td><strong>X meets Y</strong></td><td class="n">【Xの既知性】meets【Yの既知性】+【舞台/ひねり】</td><td>XもYも相手が確実に知っている作品でなければ機能しない。近すぎると情報量ゼロ</td></tr>
+<tr><td><strong>What if 〜?</strong></td><td class="n">もし【異常な前提】だったら、【主人公】は【何をする羽目になるか】？</td><td>『Jurassic Park』＝「恐竜を生き返らせたら何が起きるか」</td></tr>
+<tr><td><strong>動詞+対象+ひねり</strong></td><td class="n">【誰】として【何をする】ゲーム。ただし【一行のひねり】。</td><td>ゲームは<strong>プレイヤーの動詞</strong>が売り物。ひねりの部分がUSPそのものでなければならない</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>自己チェック:</strong> その1文を読んだ人が「で、プレイヤーは何をするの？」と聞き返したら不合格。「新感覚」「爽快」「誰でも楽しめる」「やり込み要素満載」はいずれも情報がゼロで、検証もできない。</p>
+
+<!-- ============ フェーズ1〜6 ============ -->
+
+<div class="phase"><span class="num">PHASE 1</span><h2>プロトタイプ</h2></div>
+
+<p><strong>「面白いかどうか」だけを検証する。</strong> グラフィックもUIもサウンドも捨て、四角と丸で作る。コードは捨てる前提で書く。ここで綺麗に作ろうとするのが典型的な失敗。</p>
+<p>検証したい仮説を先に紙に書く。書かずに作ると「なんとなく良さそう」で通してしまう。フェーズ0のS5・S6・G2と実質的に同じ活動であり、近年この2つは融合しつつある。</p>
+<p class="gatecell" style="font-weight:700;">ゲート: Fun found? 見つからなければ企画を変えるか中止。健全な組織ほど、ここでよく殺す。</p>
+
+<div class="phase"><span class="num">PHASE 2</span><h2>プリプロダクション</h2></div>
+
+<p>最も地味で、最も飛ばされて、最も後で祟るフェーズ。目的は<strong>量産の設計図を確定させること</strong>。</p>
+<ul>
+<li><strong>縦切り（バーティカルスライス）</strong>: 製品と同じ品質の数分間を作る。最終アート・UI・音・演出・カメラまで全部入りの「完成品はこう見える」という現物</li>
+<li>技術検証（性能・対応端末・通信・セーブ・実績）</li>
+<li><strong>制作パイプラインの整備</strong>: アセットをどう作りどう組み込むか、ツール、自動ビルド、自動テスト</li>
+<li>必要なコンテンツ総量の算出、レベル設計のルール</li>
+<li>スケジュールと予算の確定 — <strong>ここで初めて「いくら・何ヶ月かかるか」が根拠を持って言える</strong></li>
+</ul>
+<p class="gatecell" style="font-weight:700;">ゲート: 量産にゴーサイン。ここを飛ばして量産に入ると、後半で作り直しが発生して破綻する。</p>
+
+<div class="phase"><span class="num">PHASE 3</span><h2>プロダクション（量産）</h2></div>
+
+<p>全期間の半分以上を占める。確定した設計で、面・敵・キャラ・シナリオ・音を大量生産する。</p>
+<div class="scroll">
+<table>
+<thead><tr><th>マイルストーン</th><th>意味</th><th>以降のルール</th></tr></thead>
+<tbody>
+<tr><td><strong>First Playable</strong></td><td>最初から最後まで一応通せる</td><td>—</td></tr>
+<tr><td><strong>Alpha</strong>（feature complete）</td><td>機能が全部入った</td><td>原則、機能を追加しない</td></tr>
+<tr><td><strong>Beta</strong>（content complete）</td><td>コンテンツが全部入った</td><td>バグ修正とバランスのみ（content lock）</td></tr>
+</tbody>
+</table>
+</div>
+<p>並行して<strong>マーケティングが始まる</strong>。ストアページを早期公開してウィッシュリストを貯め、SNSで毎週進捗を出し、デモを配り、イベントに出る。完成してから宣伝を始めても、露出の蓄積に必要な数ヶ月が間に合わない。</p>
+<p>QAが本格稼働し、バグを重要度（出荷不可／直すべき／余裕があれば）で分類する。ここで最も効くのは<strong>削る判断</strong>で、予定の8割しか終わらないのが常態である以上、何を落とすかを先に決めておく。</p>
+
+<div class="phase"><span class="num">PHASE 4</span><h2>仕上げ</h2></div>
+
+<ul>
+<li><strong>プレイテスト</strong>: 社外の被験者に触らせ、喋らせずに観察する。チュートリアル離脱率、詰まる箇所、初回起動から「面白い」に到達するまでの時間を測る</li>
+<li>バランス調整、難易度曲線、チュートリアル改修（初心者の脱落はほぼここ）</li>
+<li>ローカライズ（テキスト抽出 → 翻訳 → 組み込み → 現地チェック）</li>
+<li>実機性能の最適化、クラッシュ率の追い込み</li>
+<li><strong>レーティング審査</strong>（CERO / ESRB / PEGI、モバイルは IARC）</li>
+<li>Release Candidate → ゴールドマスター</li>
+<li><strong>プラットフォーム審査</strong>: コンソールは lotcheck で規約準拠を厳格に見られ、通らなければ差し戻し。モバイル・PCストアにも審査がある。<strong>数日〜数週間かかる前提でスケジュールを引く</strong></li>
+<li>審査後に見つかったバグ用の Day 1 パッチ</li>
+</ul>
+
+<div class="phase"><span class="num">PHASE 5</span><h2>ローンチ</h2></div>
+
+<p><strong>ストア素材が売上を決める。</strong></p>
+<ul>
+<li>アイコン（モバイルはこれだけでCTRが数倍変わる）</li>
+<li>スクリーンショット1枚目（何のゲームか2秒で伝わるか）</li>
+<li><strong>トレーラー: 最初の5秒が全て。</strong> ロゴから始めるトレーラーは負ける</li>
+<li>説明文とキーワード（ASO／ストアタグ）</li>
+<li>プレス・配信者へのキー配布、レビュー解禁日（エンバーゴ）の設定</li>
+</ul>
+<p>モバイルF2Pは<strong>ソフトローンチ</strong>を挟む。小規模市場で先行配信して継続率と収益性を実測し、数字が悪ければ本配信前に作り直すか畳む。</p>
+
+<div class="phase"><span class="num">PHASE 6</span><h2>ライブ運用</h2></div>
+
+<div class="scroll">
+<table>
+<thead><tr><th>指標</th><th>意味</th></tr></thead>
+<tbody>
+<tr><td class="n">D1 / D7 / D30 継続率</td><td>翌日・7日後・30日後に戻ってきた割合</td></tr>
+<tr><td class="n">DAU / MAU</td><td>遊び続けているか</td></tr>
+<tr><td class="n">ARPDAU / ARPPU</td><td>1人あたり日次売上／課金者あたり売上</td></tr>
+<tr><td class="n">LTV と CPI（CAC）</td><td>生涯価値と獲得単価。<strong>LTV &gt; CPI でなければ広告を回せない</strong></td></tr>
+<tr><td class="n">チュートリアル完走率</td><td>どこで落ちているか</td></tr>
+</tbody>
+</table>
+</div>
+<p>定期アップデート、期間イベント、A/Bテスト（UI・価格・チュートリアル）、コミュニティ運営。最後に<strong>ポストモーテム</strong>を書き、何が効いて何が外れたかを次のプロジェクトへ渡す。</p>
+
+<!-- ============ 圧縮版 ============ -->
+
+<div class="phase"><span class="num">COMPRESSED</span><h2>個人開発向けの圧縮版</h2></div>
+
+<p>フェーズ0の1周で<strong>実働3〜6週間</strong>。これを最大2〜3周する。<strong>1周ごとに1案を殺すか次に進めるかを必ず決める。</strong></p>
+
+<div class="scroll">
+<table>
+<thead><tr><th class="n">#</th><th>ステップ</th><th class="n">実働</th><th>やること</th><th>完了の定義</th></tr></thead>
+<tbody>
+<tr><td class="n">0</td><td>制約を書く</td><td class="n">1時間</td><td>使える月数／金額／月あたり時間／撤退ライン／絶対にやらないこと</td><td>5項目すべてに数字が入っている</td></tr>
+<tr><td class="n">1</td><td>棚を選ぶ</td><td class="n">2〜3日</td><td>販売先を1つ決め、候補タグ5個の売れ筋を各10本並べ、上位5本・中位5本を実際に遊ぶ</td><td>その棚の客と現状を3分しゃべれる</td></tr>
+<tr><td class="n">2</td><td>20案出す</td><td class="n">半日</td><td>タイマー90分。1案1行。評価禁止</td><td>20行ある</td></tr>
+<tr><td class="n">3</td><td>3案に絞る</td><td class="n">1時間</td><td>G1を1案10分で機械的に適用</td><td>3案以下＋落とした理由が1行ずつ</td></tr>
+<tr><td class="n">4</td><td>ワンシート</td><td class="n">半日×案数</td><td>テンプレートをA4 1枚に</td><td>1枚に収まっている</td></tr>
+<tr><td class="n">5</td><td>偽トレーラー</td><td class="n">半日</td><td>絵コンテ12コマ（棒人間可）＋発売時プレスリリース1枚</td><td>12コマ埋まった＆自分で読んで面白い</td></tr>
+<tr><td class="n">6</td><td>紙プロト</td><td class="n">1〜2日</td><td>コアループだけを紙・カード・表計算で手回し</td><td>自分が3回連続で回した</td></tr>
+<tr><td class="n">7</td><td>最小プロト</td><td class="n">1〜2週間</td><td>コアループのみ実装。タイトル・メニュー・音・演出・セーブは作らない</td><td>他人に説明なしで渡せる</td></tr>
+<tr><td class="n">8</td><td>他人テスト</td><td class="n">2〜3日</td><td>知り合いでない5〜10人。横で黙って観察</td><td>5人以上のログがある</td></tr>
+<tr><td class="n">9</td><td class="gatecell">G2 判定</td><td class="n">1時間</td><td>G2チェックリストを正直に埋める</td><td>通過 or 殺す。<strong>両方あり得る前提で臨む</strong></td></tr>
+<tr><td class="n">10</td><td>市場検証</td><td class="n">3〜5日</td><td>絵コンテを動画にしてSNS・コミュニティ・ストアページへ</td><td>反応の数字が1つ以上ある</td></tr>
+<tr><td class="n">11</td><td class="gatecell">G3 判定</td><td class="n">1時間</td><td>G3チェックリストを埋め、撤退条件を日付付きで書く</td><td>グリーンライト or 1周目に戻る</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>圧縮するときに削ってよいもの・いけないもの</h3>
+
+<div class="scroll">
+<table>
+<thead><tr><th>判断</th><th>対象</th><th>根拠</th></tr></thead>
+<tbody>
+<tr><td>削ってよい</td><td>詳細なGDD、ピッチデッキ、財務モデル、綺麗な資料</td><td>プリプロは1ページから始めるのが主流</td></tr>
+<tr><td>削ってよい</td><td>プロトタイプの見た目・音・メニュー</td><td>磨きすぎたプロトタイプの罠</td></tr>
+<tr><td>削ってよい</td><td>承認会議、スコアリング表</td><td>Supercellにはグリーンライト手続き自体がない。スコア表の予測精度は実証されていない</td></tr>
+<tr><td class="gatecell">削ってはいけない</td><td>市場調査（棚選び）</td><td>ジャンル選択は最大のマーケティング判断</td></tr>
+<tr><td class="gatecell">削ってはいけない</td><td>他人（友人でない）へのプレイテスト</td><td>友人は正直な批判をくれない</td></tr>
+<tr><td class="gatecell">削ってはいけない</td><td>撤退条件を先に書くこと</td><td>遅い損切りほど心理的・経済的に苦しい</td></tr>
+<tr><td class="gatecell">削ってはいけない</td><td>案を2本以上走らせること</td><td>比較対象がないと「これしかない」で判断が歪む</td></tr>
+</tbody>
+</table>
+</div>
+
+<footer>
+<h3 style="margin-top:0;color:var(--ink);">出典と、その限界</h3>
+<p>フェーズ0の記述はこれらに基づく。詳細な調査記録は <code>product/research/03-phase0-process.md</code> にある。<strong>調査環境のネットワーク制限により一次ページの全文を取得できず、検索エンジン経由の抜粋に頼った箇所がある。</strong>数字を意思決定に使う前に、各URLを自分の目で開いて確認すること。</p>
+<ul>
+<li>Supercell「10 learnings from 10 years」 — <a href="https://supercell.com/en/news/10-learnings-10-years/">supercell.com</a></li>
+<li>Game Developer「Maybe it's time to kill your game and move on」/「Less management, more success: Inside Supercell」/「How to write a game design document」 — <a href="https://www.gamedeveloper.com/">gamedeveloper.com</a></li>
+<li>Lloyd Melnick「Building an analytic driven greenlight process」 — <a href="https://lloydmelnick.com/2019/02/26/building-an-analytic-driven-greenlight-process/">lloydmelnick.com</a></li>
+<li>Deconstructor of Fun「Deconstructing project greenlight」/「Voodoo's secret sauce」 — <a href="https://www.deconstructoroffun.com/">deconstructoroffun.com</a></li>
+<li>Jesse Schell『The Art of Game Design』（Rule of the Loop）— <a href="https://circa.cs.ualberta.ca/index.php/CIRCA:The_Art_of_Game_Design_-_Jesse_Schell">CIRCA</a></li>
+<li>Scott Rogers『Level Up!』（ワンシート／ten-pager）— <a href="https://www.oreilly.com/library/view/level-up-the/9780470688670/ch18.html">O'Reilly</a></li>
+<li>Double Fine「Amnesia Fortnight」 — <a href="https://www.doublefine.com/games/amnesia-fortnight">doublefine.com</a></li>
+<li>Working Backwards（PR/FAQ）— <a href="https://workingbackwards.com/concepts/working-backwards-pr-faq-process/">workingbackwards.com</a></li>
+<li>Wayline（磨きすぎたプロトタイプの罠／プレイテスト）— <a href="https://www.wayline.io/blog/polished-prototype-trap-indie-game-innovation">wayline.io</a></li>
+<li>Chris Zukowski「How to Market a Game」（ジャンル選択）— <a href="https://howtomarketagame.com/">howtomarketagame.com</a></li>
+<li>GDC 2026 参加記（7段階 → 3段階への収束）— <a href="https://www.invisiblefriends.net/gdc-2026-a-personal-account/">invisiblefriends.net</a></li>
+</ul>
+<p style="margin-bottom:0;"><strong>フェーズ1〜6の記述には、この調査で取った出典がない。</strong>一般的な業界の実務知識として書いたものであり、フェーズ0と同じ強度では扱えない。</p>
+</footer>
+
+</div>
