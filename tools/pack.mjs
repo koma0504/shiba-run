@@ -24,7 +24,9 @@ const size=execFileSync('du',['-h',OUT]).toString().split('\t')[0];
 const list=execFileSync('unzip',['-l',OUT]).toString().trim().split('\n');
 console.log(OUT+' を作った（'+size+'）');
 console.log('  ファイル数: '+(list.length-5));
-// index.html が直下にあることを確かめる。ここを間違えると itch.io で動かない
-if(!/\bindex\.html\b/.test(list.find(l=>/index\.html/.test(l))||'')){
+// index.html が直下にあることを確かめる。ここを間違えると itch.io で動かない。
+// unzip -l の行末はファイル名。直下なら「空白 + index.html」で終わり、
+// フォルダ入りだと「/index.html」で終わるので前が空白の行だけを直下とみなす
+if(!list.some(l=>/\sindex\.html$/.test(l))){
   console.error('index.html が zip の直下にない。itch.io で動かない');process.exit(1);}
 console.log('  index.html は直下にある');

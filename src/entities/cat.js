@@ -4,7 +4,7 @@ import {isSolid,stage} from '../stage.js';
 import {S} from '../state.js';
 import {ctx} from '../canvas.js';
 import {roundRect,triangle} from '../draw.js';
-import {rectsOverlap,killEnemy,touchEnemy} from '../combat.js';
+import {rectsOverlap,shotHitsAny,touchEnemy} from '../combat.js';
 
 export default {
   key: 'cat',
@@ -21,10 +21,7 @@ const fc=Math.floor(front/TILE),fr=Math.floor((ct.y+ct.h-2)/TILE);
 if(isSolid(fc,fr)||!isSolid(fc,fr+1)){ct.facing*=-1;ct.x+=ct.facing*2.2;}
 if(S.state==='play'&&rectsOverlap(S.player,ct))touchEnemy(ct,{killPoints:100,bounce:-8.5,hurtFromOffset:17});}},
 
-  hitByShot(sh){const list=S.cats;
-for(let j=0;j<list.length;j++){const e=list[j];
-if(!e.deadTimer&&sh.x>e.x-4&&sh.x<e.x+e.w+4&&sh.y>e.y-4&&sh.y<e.y+e.h+4){killEnemy(e,100);return true;}}
-return false;},
+  hitByShot(sh){return shotHitsAny(S.cats,sh,100);},
 
   draw(camI){const list=S.cats;
 for(let k=0;k<list.length;k++){const ct=list[k];

@@ -1,6 +1,8 @@
 import pw from '/opt/node22/lib/node_modules/playwright/index.js';
 const { chromium } = pw;
-const OUT='/tmp/claude-0/-home-user-shiba-run/c88bded8-b8f8-5b74-963e-b608f2643079/scratchpad';
+import {tmpdir} from 'node:os';
+// スクリーンショットの出力先。OUT で上書きできる（既定はOSの一時領域）
+const OUT=process.env.OUT||tmpdir();
 const URL='http://localhost:8765/';
 const KEY='shibaRun.v1';
 const b = await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});

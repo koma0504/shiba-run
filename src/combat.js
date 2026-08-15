@@ -14,8 +14,10 @@ export function resolveTiles(o,ax){const c1=Math.max(0,Math.floor(o.x/TILE)),c2=
 
 export function loseLife(){S.lives--;S.combo=0;S.powerTimer=0;sfx('hit');spawnParticles(S.player.x+15,S.player.y+15,12,'#e2554a',2.8,0.1,32,3);S.shots.length=0;S.enemyBullets.length=0;
 // ボス戦中に力尽きたら仕切り直すが、与えたダメージは持ち越す。
-// 毎回HP満タンに戻ると、何度挑んでも手応えが1ミリも進まず心が折れる
-if(S.bossStarted&&!S.bossDead){const carried=S.boss.hp;S.boss=makeBoss();S.boss.hp=carried;S.bossStarted=false;}
+// 毎回HP満タンに戻ると、何度挑んでも手応えが1ミリも進まず心が折れる。
+// ただし断末魔（mode==='die'）の最中は仕切り直さない。倒しきった直後に残った弾で
+// 力尽きることがあり、ここで巻き戻すとHP0のボスが蘇って再戦を強いられる
+if(S.bossStarted&&!S.bossDead&&S.boss.mode!=='die'){const carried=S.boss.hp;S.boss=makeBoss();S.boss.hp=carried;S.bossStarted=false;}
 if(S.lives<=0){resetPlayer(false);gameOver();}else resetPlayer(false);}
 
 export function hurtPlayer(d,fromX){if(S.player.invincible>0||S.powerTimer>0)return;
@@ -23,6 +25,13 @@ S.hp-=d;S.player.invincible=60;S.player.stunTimer=12;S.combo=0;
 S.player.vx=(S.player.x+S.player.w/2<fromX?-1:1)*3.5;S.player.vy=-4;
 sfx('hit');spawnParticles(S.player.x+15,S.player.y+15,7,'#e2554a',2.2,0.1,24,2.6);
 if(S.hp<=0)loseLife();}
+
+// ショットが一覧のどれかに当たったら倒して true を返す。cat と crow が共有する。
+// 判定枠はショットの太さぶんだけ4px広げてある
+export function shotHitsAny(list,sh,pts){
+for(let j=0;j<list.length;j++){const e=list[j];
+if(!e.deadTimer&&sh.x>e.x-4&&sh.x<e.x+e.w+4&&sh.y>e.y-4&&sh.y<e.y+e.h+4){killEnemy(e,pts);return true;}}
+return false;}
 
 // ショットやパワーアップ状態で倒したとき。コンボは加算しない
 export function killEnemy(e,pts){e.deadTimer=e.deadTimer||1;S.score+=pts;popText(e.x+e.w/2,e.y-6,'+'+pts,'#a86b1e');spawnParticles(e.x+e.w/2,e.y+10,8,'#ffd23e',2.2,0.08,26,2.6);sfx('stomp');}

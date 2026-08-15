@@ -4,7 +4,7 @@ import {stage} from '../stage.js';
 import {S} from '../state.js';
 import {ctx} from '../canvas.js';
 import {triangle} from '../draw.js';
-import {rectsOverlap,killEnemy,touchEnemy} from '../combat.js';
+import {rectsOverlap,shotHitsAny,touchEnemy} from '../combat.js';
 
 export default {
   key: 'crow',
@@ -20,10 +20,7 @@ if(cr.x<cr.minX){cr.x=cr.minX;cr.facing=1;}if(cr.x>cr.maxX){cr.x=cr.maxX;cr.faci
 cr.y=cr.baseY+Math.sin(S.time*0.05+cr.phase)*24;
 if(S.state==='play'&&rectsOverlap(S.player,cr))touchEnemy(cr,{killPoints:100,bounce:-9.5,hurtFromOffset:15});}},
 
-  hitByShot(sh){const list=S.crows;
-for(let j=0;j<list.length;j++){const e=list[j];
-if(!e.deadTimer&&sh.x>e.x-4&&sh.x<e.x+e.w+4&&sh.y>e.y-4&&sh.y<e.y+e.h+4){killEnemy(e,100);return true;}}
-return false;},
+  hitByShot(sh){return shotHitsAny(S.crows,sh,100);},
 
   draw(camI){const list=S.crows;
 for(let k=0;k<list.length;k++){const cr=list[k];

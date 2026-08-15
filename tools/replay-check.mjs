@@ -270,9 +270,11 @@ if (SCENARIO !== 'run') {
   if (SCENARIO === 'pause') {
     // 仕込みは要らない。runと同じ面を同じ条件で走らせ、違いはポーズを挟むことだけ
   } else if (SCENARIO === 'boss') {
-    // 中間地点も最後のものに合わせ、被弾死してもアリーナ付近から再開させる
+    const { stage } = await import(pathToFileURL(join(ROOT, 'src/stage.js')).href);
+    // 中間地点も最後のものに合わせ、被弾死してもアリーナ付近から再開させる。
+    // 添字を直書きすると、面に中間地点を足した瞬間に「最後」でなくなる（実際に一度ずれた）
     setup = () => {
-      S.checkpointIndex = 3;
+      S.checkpointIndex = stage.checkpoints.length - 1;
       S.player.x = 240 * TILE;
       S.player.y = 11 * TILE - 30;
       S.player.vx = 0;

@@ -20,7 +20,7 @@ for(let run=0; run<RUNS; run++){
     let s=seed; const rnd=()=>((s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff);
     window.__log=[]; window.__max=2; window.__cleared=false;
     let prevLives=S.lives, prevHp=S.hp, lastCol=2, lastY=0, delay=0, jumpHeld=0;
-    let stuckX=0, stuckN=0, tick=0;
+    let stuckX=0, stuckN=0, tick=0, shooting=false;
     window.__t=setInterval(()=>{
       if(S.state==='clear'){window.__cleared=true;return;}
       if(S.state!=='play'||!S.player)return;
@@ -38,8 +38,12 @@ for(let run=0; run<RUNS; run++){
       if(holeAhead&&delay<=0){delay=Math.floor(rnd()*5);}
       if(holeAhead&&delay>0){delay--; if(delay===0)jumpHeld=10;}
       input.right=true; input.left=false;
-      // 初心者はとりあえず連打する。撃たないボットだと敵の被害を過大に見積もる
-      tick++; input.shoot=(tick%22)<6;
+      // 初心者はとりあえず連打する。撃たないボットだと敵の被害を過大に見積もる。
+      // input.shoot への直接代入では発射されない（発射は input.js の押下エッジで起きる）ので、
+      // キーイベントを合成して本物の入力経路を通す
+      tick++; const wantShoot=(tick%22)<6;
+      if(wantShoot!==shooting){shooting=wantShoot;
+        window.dispatchEvent(new KeyboardEvent(wantShoot?'keydown':'keyup',{code:'KeyZ'}));}
       // 段差で止まったら跳ぶ。穴だけ見ていると階段の前で永久に足踏みする
       if(Math.abs(S.player.x-stuckX)<1.5){stuckN++;}else{stuckN=0;stuckX=S.player.x;}
       if(stuckN>18&&jumpHeld<=0){jumpHeld=10;stuckN=0;}
