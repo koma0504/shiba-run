@@ -1,6 +1,6 @@
 ---
 title: 柴犬ランを完成させて公開する
-status: draft        # draft | approved | in-progress | done | aborted
+status: in-progress  # draft | approved | in-progress | done | aborted
 created: 2026-08-13
 planner: claude-opus-5
 executor: 未定
