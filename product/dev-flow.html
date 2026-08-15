@@ -282,7 +282,7 @@ footer ul{padding-left:1.2em;}
 <div class="wrap">
 
 <header>
-  <p class="kicker">開発フローの調査 / 2026-08-13</p>
+  <p class="kicker">開発フローの調査 / 2026-08-13 初版・08-14 裏取り改訂</p>
   <h1>発売までの7フェーズ</h1>
   <p class="lede">ゲーム会社が何もないところから発売までに辿る道のりと、その各段階に埋まっているゲートとループ。個人開発向けの圧縮版つき。</p>
 </header>
@@ -294,7 +294,7 @@ footer ul{padding-left:1.2em;}
 <p>下の各フェーズは順に並んでいるが、<strong>ゲートで落ちたら上流のループへ戻る</strong>。一直線に進むことは想定されていない。</p>
 
 <div class="note">
-<p><strong>出典の扱い。</strong> フェーズ0の内容（ステップ・ゲート・ループ・テンプレート）は出典を取って調べたもので、末尾に一次・二次のURLを挙げてある。フェーズ1〜6の記述は<strong>一般的な業界の実務知識として書いたもので、この調査では出典を取っていない</strong>。数字を意思決定に使うなら、この2つを区別すること。</p>
+<p><strong>出典の扱い。</strong> フェーズ0の内容（ステップ・ゲート・ループ・テンプレート）は出典を取って調べたもので、末尾に一次・二次のURLを挙げてある。フェーズ1〜6は当初、一般的な業界知識として無出典で書いたが、<strong>2026-08-14 の追加調査で15の主張を裏取りし、9件を確認、4件を訂正、2件を原典の表現に弱めた</strong>（判定表は <code>product/research/06-phases1-6-sources.md</code>）。それでも粒度はフェーズ0より粗いままなので、数字を意思決定に使う前には元のURLを開くこと。</p>
 </div>
 
 <h2 style="margin-top:56px;">全体像</h2>
@@ -609,9 +609,12 @@ footer ul{padding-left:1.2em;}
 <tbody>
 <tr><td><strong>First Playable</strong></td><td>最初から最後まで一応通せる</td><td>—</td></tr>
 <tr><td><strong>Alpha</strong>（feature complete）</td><td>機能が全部入った</td><td>原則、機能を追加しない</td></tr>
-<tr><td><strong>Beta</strong>（content complete）</td><td>コンテンツが全部入った</td><td>バグ修正とバランスのみ（content lock）</td></tr>
+<tr><td><strong>Beta</strong>（content complete）</td><td>コンテンツが全部入った</td><td>バグ修正とバランスのみ（いわゆる content lock）</td></tr>
 </tbody>
 </table>
+</div>
+<div class="note">
+<p><strong>用語の注意。</strong>これらのマイルストーン名に業界統一の定義はなく、各段階が指す範囲は会社ごとに揺れる（裏取り調査で確認）。チームや外注とやり取りするときは、名前だけで通じると思わず、<strong>自分のプロジェクトでの定義を1行書いてから</strong>使う。</p>
 </div>
 <p>並行して<strong>マーケティングが始まる</strong>。ストアページを早期公開してウィッシュリストを貯め、SNSで毎週進捗を出し、デモを配り、イベントに出る。完成してから宣伝を始めても、露出の蓄積に必要な数ヶ月が間に合わない。</p>
 <p>QAが本格稼働し、バグを重要度（出荷不可／直すべき／余裕があれば）で分類する。ここで最も効くのは<strong>削る判断</strong>で、予定の8割しか終わらないのが常態である以上、何を落とすかを先に決めておく。</p>
@@ -625,7 +628,7 @@ footer ul{padding-left:1.2em;}
 <li>実機性能の最適化、クラッシュ率の追い込み</li>
 <li><strong>レーティング審査</strong>（CERO / ESRB / PEGI、モバイルは IARC）</li>
 <li>Release Candidate → ゴールドマスター</li>
-<li><strong>プラットフォーム審査</strong>: コンソールは lotcheck で規約準拠を厳格に見られ、通らなければ差し戻し。モバイル・PCストアにも審査がある。<strong>数日〜数週間かかる前提でスケジュールを引く</strong></li>
+<li><strong>プラットフォーム審査</strong>: コンソールは lotcheck / certification で規約準拠を厳格に見られ、通らなければ差し戻しで、<strong>数日〜数週間かかる前提</strong>でスケジュールを引く。モバイル（App Store / Google Play）の審査は現在ふつう<strong>1〜3日</strong>だが、リジェクトの往復が入ると延びる</li>
 <li>審査後に見つかったバグ用の Day 1 パッチ</li>
 </ul>
 
@@ -633,9 +636,9 @@ footer ul{padding-left:1.2em;}
 
 <p><strong>ストア素材が売上を決める。</strong></p>
 <ul>
-<li>アイコン（モバイルはこれだけでCTRが数倍変わる）</li>
-<li>スクリーンショット1枚目（何のゲームか2秒で伝わるか）</li>
-<li><strong>トレーラー: 最初の5秒が全て。</strong> ロゴから始めるトレーラーは負ける</li>
+<li>アイコン。モバイルではA/Bテストの定番だが、実測の改善幅は勝者で<strong>中央値8〜12%、良くて2〜3割</strong>ほど。「アイコンだけでCTRが数倍変わる」という通説の実例は裏取りで確認できなかった</li>
+<li>スクリーンショット1枚目（何のゲームか一目で伝わるか）</li>
+<li><strong>トレーラーは最初の5〜10秒で決まる。</strong>ロゴや権利表記を出すなら1秒以内に切り上げる（ゲームトレーラー専門家 Derek Lieu の指針）</li>
 <li>説明文とキーワード（ASO／ストアタグ）</li>
 <li>プレス・配信者へのキー配布、レビュー解禁日（エンバーゴ）の設定</li>
 </ul>
@@ -733,7 +736,7 @@ footer ul{padding-left:1.2em;}
 <li>Chris Zukowski「How to Market a Game」（ジャンル選択）— <a href="https://howtomarketagame.com/">howtomarketagame.com</a></li>
 <li>GDC 2026 参加記（7段階 → 3段階への収束）— <a href="https://www.invisiblefriends.net/gdc-2026-a-personal-account/">invisiblefriends.net</a></li>
 </ul>
-<p style="margin-bottom:0;"><strong>フェーズ1〜6の記述には、この調査で取った出典がない。</strong>一般的な業界の実務知識として書いたものであり、フェーズ0と同じ強度では扱えない。</p>
+<p style="margin-bottom:0;"><strong>フェーズ1〜6は 2026-08-14 の追加調査で裏取りした。</strong>15主張中9件を確認、4件を訂正（マイルストーン定義に業界標準はない／モバイル審査はふつう1〜3日／アイコンの改善幅は数倍ではなく1〜3割／リテンションの 40/20/10 目安は現在は平均ではなく上位層の基準）、2件を原典の表現に弱めた。判定表と出典URLは <code>product/research/06-phases1-6-sources.md</code>。</p>
 </footer>
 
 </div>

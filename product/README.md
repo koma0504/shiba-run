@@ -28,6 +28,7 @@
 | `research/03-phase0-process.md` | フェーズ0の標準フローとテンプレート | 調査 |
 | `research/04-validation.md` | 「面白いか」「売れるか」の検証手法 | 調査 |
 | `research/05-concept-check.md` | 残った案の飽和チェックと敵対的レビュー | 調査 |
+| `research/06-phases1-6-sources.md` | フェーズ1〜6の15主張の裏取り。9件確認・4件訂正 | 調査 |
 | `research/shots/` | 現物のスクリーンショット（実ブラウザ） | — |
 | `dev-flow.html` | **開発フローだけをまとめた読み物**。0〜6の全フェーズ、ゲート、ループ、テンプレート | 調査の抜粋 |
 | `release/itch-page.md` | itch.io の掲載原稿・設定値・手順 | 公開用 |
