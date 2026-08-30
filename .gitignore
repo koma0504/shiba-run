@@ -1,1 +1,4 @@
 .DS_Store
+replicate/node_modules/
+replicate/reference/*
+!replicate/reference/design-tokens.json
